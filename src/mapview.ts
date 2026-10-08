@@ -21,6 +21,7 @@ import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import { BASEMAP, FLORIDA } from "./config";
 import type { LngLat } from "./geo";
 import { KINDS, markerImage } from "./icons";
+import type { JamKind } from "./routes/tomtom";
 import type { Camera, EventKind, TrafficEvent } from "./shared/types";
 import { cssVar, isDark } from "./theme";
 
@@ -28,8 +29,8 @@ export type Pick = { type: "camera"; id: number } | { type: "event"; id: number 
 
 export interface RouteDrawing {
   line: LngLat[];
-  /** Stretches TomTom says are slow, 1 (minor) to 4 (closed or indefinite). */
-  jams: { line: LngLat[]; magnitude: number }[];
+  /** Stretches TomTom says are slow, closed, or under roadwork. */
+  jams: { line: LngLat[]; kind: JamKind }[];
 }
 
 setWorkerUrl(workerUrl);
@@ -39,23 +40,28 @@ const FL511_CREDIT = 'Cameras and events <a href="https://fl511.com/" target="_b
 type Features = FeatureCollection;
 const none = (): Features => ({ type: "FeatureCollection", features: [] });
 
-/** Speed tiles; relative0 colors each road by its speed as a share of free flow, and its dark version suits the dark basemap. */
+/** Speed tiles: relative0 colors each road by its speed as a share of free flow. Its dark
+ *  version (relative0-dark) is too dim on this dark map to tell orange from green, so both
+ *  themes use relative0, a little softer in dark mode. */
 const flowUrl = (key: string, stamp: number) =>
-  `https://api.tomtom.com/traffic/map/4/tile/flow/${isDark() ? "relative0-dark" : "relative0"}/{z}/{x}/{y}.png?key=${encodeURIComponent(key)}&tileSize=512&t=${stamp}`;
+  `https://api.tomtom.com/traffic/map/4/tile/flow/relative0/{z}/{x}/{y}.png?key=${encodeURIComponent(key)}&tileSize=512&t=${stamp}`;
 
 /** The basemap with its land, water, and labels in the page's colors. If OpenFreeMap
  *  doesn't answer, a blank one, so FL511's cameras and events still show. */
 async function basemap(): Promise<StyleSpecification> {
   const land = cssVar("--land");
-  let style: StyleSpecification;
-  try {
-    const res = await fetch(isDark() ? BASEMAP.dark : BASEMAP.light);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    style = (await res.json()) as StyleSpecification;
-  } catch (e) {
-    console.warn("basemap:", e);
-    return { version: 8, sources: {}, layers: [{ id: "background", type: "background", paint: { "background-color": land } }] };
+  let style: StyleSpecification | null = null;
+  for (let attempt = 0; attempt < 2 && !style; attempt++) {
+    try {
+      if (attempt) await new Promise((r) => setTimeout(r, 1500));
+      const res = await fetch(isDark() ? BASEMAP.dark : BASEMAP.light);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      style = (await res.json()) as StyleSpecification;
+    } catch (e) {
+      console.warn("basemap:", e);
+    }
   }
+  if (!style) return { version: 8, sources: {}, layers: [{ id: "background", type: "background", paint: { "background-color": land } }] };
   const green = cssVar("--green");
   const paint: Record<string, Record<string, string>> = {
     background: { "background-color": land },
@@ -79,6 +85,10 @@ async function basemap(): Promise<StyleSpecification> {
       highway_major_subtle: { "line-color": minor },
       highway_motorway_subtle: { "line-color": minor },
       highway_minor: { "line-color": minor },
+      // Runways and taxiways, which it draws black.
+      "aeroway-runway": { "line-color": minor },
+      "aeroway-taxiway": { "line-color": minor },
+      "aeroway-area": { "fill-color": cssVar("--town") },
     });
   }
   // Every label above every road and fill, so the speeds and the route can go between them
@@ -215,7 +225,7 @@ export class TrafficMap {
         source: "jams",
         layout: { "line-join": "round", "line-cap": "round" },
         paint: {
-          "line-color": ["case", [">=", ["get", "magnitude"], 4], cssVar("--closure"), [">=", ["get", "magnitude"], 3], cssVar("--crash"), cssVar("--slow")],
+          "line-color": ["match", ["get", "kind"], "closed", cssVar("--closure"), "heavy", cssVar("--crash"), "work", cssVar("--work"), cssVar("--slow")],
           "line-width": ["interpolate", ["linear"], ["zoom"], 6, 3, 12, 6],
         },
       },
@@ -320,7 +330,7 @@ export class TrafficMap {
     if (!this.route) return none();
     return {
       type: "FeatureCollection",
-      features: this.route.jams.map((j) => ({ type: "Feature", properties: { magnitude: j.magnitude }, geometry: { type: "LineString", coordinates: j.line } })),
+      features: this.route.jams.map((j) => ({ type: "Feature", properties: { kind: j.kind }, geometry: { type: "LineString", coordinates: j.line } })),
     };
   }
 
@@ -357,7 +367,7 @@ export class TrafficMap {
         type: "raster",
         source: "flow",
         layout: { visibility: this.showFlow ? "visible" : "none" },
-        paint: { "raster-opacity": 0.92, "raster-fade-duration": 0 },
+        paint: { "raster-opacity": isDark() ? 0.8 : 0.92, "raster-fade-duration": 0 },
       },
       "route-jam",
     );

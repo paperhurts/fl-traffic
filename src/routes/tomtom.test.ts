@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parsePlaces, parseRoute } from "./tomtom";
+import { jamKind, parsePlaces, parseRoute, worthShowing, type Jam } from "./tomtom";
 
 // Shaped like TomTom's Calculate Route answer with computeTravelTimeFor=all and sectionType=traffic.
 const answer = {
@@ -72,5 +72,23 @@ describe("parsePlaces", () => {
       { lon: -82.43, lat: 27.96, label: "Ybor City Museum, Tampa" },
       { lon: -81.38, lat: 28.54, label: "400 S Orange Ave, Orlando, FL 32801" },
     ]);
+  });
+});
+
+describe("jamKind and worthShowing", () => {
+  const jam = (category: string, magnitude: number, delay: number): Jam => ({ from: 0, to: 1, magnitude, delay, speedKmh: null, category });
+  it("lets the category decide before the magnitude", () => {
+    // TomTom gives roadwork of unknown delay magnitude 4, which it also uses for closures.
+    expect(jamKind(jam("ROAD_WORK", 4, 0))).toBe("work");
+    expect(jamKind(jam("ROAD_CLOSURE", 4, 0))).toBe("closed");
+    expect(jamKind(jam("JAM", 3, 300))).toBe("heavy");
+    expect(jamKind(jam("JAM", 1, 300))).toBe("slow");
+    expect(jamKind(jam("OTHER", 2, 60))).toBe("slow");
+  });
+  it("skips slowdowns that cost under half a minute", () => {
+    expect(worthShowing(jam("JAM", 1, 19))).toBe(false);
+    expect(worthShowing(jam("JAM", 1, 30))).toBe(true);
+    expect(worthShowing(jam("ROAD_WORK", 4, 0))).toBe(true);
+    expect(worthShowing(jam("ROAD_CLOSURE", 4, 0))).toBe(true);
   });
 });

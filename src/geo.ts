@@ -92,6 +92,43 @@ export function place(line: Measured, p: LngLat): Placement {
   return best;
 }
 
+/** The compass direction (0–180) of the long axis of the points within `meters` of `at`;
+ *  null when there are fewer than three, they spread under 150 m, or they don't make a
+ *  line (the short axis more than half the long one). */
+export function lineAxis(points: LngLat[], at: LngLat, meters: number): number | null {
+  const kx = Math.cos(at[1] * rad) * M_PER_DEG;
+  let n = 0;
+  let sx = 0;
+  let sy = 0;
+  let sxx = 0;
+  let syy = 0;
+  let sxy = 0;
+  for (const [lon, lat] of points) {
+    const x = (lon - at[0]) * kx;
+    const y = (lat - at[1]) * M_PER_DEG;
+    if (x * x + y * y > meters * meters) continue;
+    n++;
+    sx += x;
+    sy += y;
+    sxx += x * x;
+    syy += y * y;
+    sxy += x * y;
+  }
+  if (n < 3) return null;
+  const mx = sx / n;
+  const my = sy / n;
+  const cxx = sxx / n - mx * mx;
+  const cyy = syy / n - my * my;
+  const cxy = sxy / n - mx * my;
+  const half = (cxx + cyy) / 2;
+  const disc = Math.sqrt(Math.max(0, half * half - (cxx * cyy - cxy * cxy)));
+  const long = half + disc;
+  const short = half - disc;
+  if (long < 150 * 150 || short > long / 4) return null;
+  const fromEast = Math.atan2(2 * cxy, cxx - cyy) / 2 / rad;
+  return (((90 - fromEast) % 180) + 180) % 180;
+}
+
 /** True when a point is within `meters` of a box (west, south, east, north). */
 export function nearBox(box: [number, number, number, number], p: LngLat, meters: number): boolean {
   const dLat = meters / M_PER_DEG;

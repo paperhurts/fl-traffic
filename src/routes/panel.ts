@@ -8,9 +8,9 @@ import { measure, type LngLat, type Measured } from "../geo";
 import { KINDS, markerUrl } from "../icons";
 import type { TrafficMap } from "../mapview";
 import type { Camera, EventKind, TrafficEvent } from "../shared/types";
-import { byRoad, camerasAlong, eventsAlong, type Along, type EventAlong } from "./match";
+import { byRoad, camerasAlong, eventsAlong, onCrossingRoad, type CameraAlong, type EventAlong } from "./match";
 import { loadRoutes, newId, recall, remember, saveRoutes, type Place, type SavedRoute } from "./store";
-import { nameOf, route as fetchRoute, search, type Jam, type RouteResult } from "./tomtom";
+import { jamKind, nameOf, route as fetchRoute, search, worthShowing, type Jam, type JamKind, type RouteResult } from "./tomtom";
 import { atMile, compareUsual, countWords, milepost } from "./words";
 
 export interface PanelDeps {
@@ -33,8 +33,17 @@ interface Draft {
 interface Opened {
   result: RouteResult;
   line: Measured;
-  cams: Along<Camera>[];
+  /** The cameras listed, without any the viewer left off. */
+  cams: CameraAlong[];
+  /** Every camera beside the route, which tells which roads it follows. */
+  all: CameraAlong[];
 }
+
+/** An event along the route, and whether it's on a road the route only crosses. */
+type Alert = EventAlong & { crossing: boolean };
+
+const JAM_COLORS: Record<JamKind, string> = { closed: "--closure", heavy: "--crash", slow: "--slow", work: "--work" };
+const JAM_WORDS: Record<JamKind, string> = { closed: "Closed", heavy: "Stop and go", slow: "Slow", work: "Roadwork" };
 
 /** Events worth listing even on the other side of the road. */
 const BOTH_WAYS = new Set<EventKind>(["crash", "closure", "incident", "weather"]);
@@ -60,8 +69,8 @@ export class RoutePanel {
   private found: { from: Place[]; to: Place[] } = { from: [], to: [] };
   /** What's typed in the search boxes, kept across redraws. */
   private queries = { from: "", to: "" };
-  /** The open route's cameras, worked out once per answer from TomTom. */
-  private along: { result: RouteResult; hidden: string; opened: Opened } | null = null;
+  /** Each TomTom answer's measured line and cameras, worked out once. */
+  private matched = new WeakMap<RouteResult, { line: Measured; all: CameraAlong[] }>();
   private roads: Map<string, Camera[]>;
   private visible = new Set<HTMLImageElement>();
   private io: IntersectionObserver;
@@ -352,13 +361,24 @@ export class RoutePanel {
     if (v.name !== "detail") return null;
     const result = this.results.get(this.routeKey(v.id, v.back));
     if (!result) return null;
-    const hiddenIds = this.routeById(v.id)?.hidden ?? [];
-    const hidden = hiddenIds.join(",");
-    if (this.along?.result === result && this.along.hidden === hidden) return this.along.opened;
-    const line = measure(result.line);
-    const cams = camerasAlong(line, this.deps.cameras, this.roads).filter((a) => !hiddenIds.includes(a.item.id));
-    this.along = { result, hidden, opened: { result, line, cams } };
-    return this.along.opened;
+    const hidden = new Set(this.routeById(v.id)?.hidden ?? []);
+    const { line, all } = this.match(result);
+    return { result, line, all, cams: all.filter((a) => !hidden.has(a.item.id)) };
+  }
+
+  private match(result: RouteResult) {
+    let m = this.matched.get(result);
+    if (!m) {
+      const line = measure(result.line);
+      m = { line, all: camerasAlong(line, this.deps.cameras, this.roads) };
+      this.matched.set(result, m);
+    }
+    return m;
+  }
+
+  /** FL511's events along a route, each marked when it's on a road the route only crosses. */
+  private alerts(line: Measured, all: CameraAlong[]): Alert[] {
+    return eventsAlong(line, this.deps.events()).map((e) => ({ ...e, crossing: onCrossingRoad(e, all) }));
   }
 
   private render() {
@@ -386,7 +406,7 @@ export class RoutePanel {
       this.deps.map.setRoute(null);
       return;
     }
-    const jams = o.result.jams.map((j) => ({ line: o.result.line.slice(j.from, j.to + 1), magnitude: j.magnitude }));
+    const jams = o.result.jams.filter(worthShowing).map((j) => ({ line: o.result.line.slice(j.from, j.to + 1), kind: jamKind(j) }));
     this.deps.map.setRoute({ line: o.result.line, jams }, o.cams.map((a) => a.item.id));
   }
 
@@ -405,9 +425,8 @@ export class RoutePanel {
     const res = this.results.get(k);
     if (!res) return this.errors.has(k) ? `<span class="err">${esc(this.errors.get(k)!)}</span>` : "Checking traffic…";
     const bits = [`<b>${duration(res.seconds)}</b>`, compareUsual(res)];
-    const bad = eventsAlong(measure(res.line), this.deps.events()).filter(
-      (e) => e.sameWay && (e.item.kind === "crash" || e.item.kind === "closure" || e.item.full),
-    );
+    const { line, all } = this.match(res);
+    const bad = this.alerts(line, all).filter((e) => e.sameWay && !e.crossing && (e.item.kind === "crash" || e.item.kind === "closure" || e.item.full));
     if (bad.length) bits.push(`<span class="warn">${countWords(bad)} on the way</span>`);
     return bits.join(" · ");
   }
@@ -478,11 +497,12 @@ export class RoutePanel {
       return `${top}<p class="${err ? "err" : "hint"}">${err ? esc(err) : "Asking TomTom for today's traffic…"}</p>${bottom}`;
     }
     const res = o.result;
-    // Across the median, only what slows everyone (people slow down to look at a crash) is worth a line.
-    const events = eventsAlong(o.line, this.deps.events()).filter((e) => e.sameWay || BOTH_WAYS.has(e.item.kind) || e.item.full);
+    // Across the median or on a road the route only crosses, only what slows everyone
+    // (people slow down to look at a crash) is worth a line.
+    const events = this.alerts(o.line, o.all).filter((e) => (e.sameWay && !e.crossing) || BOTH_WAYS.has(e.item.kind) || e.item.full);
     const alerts = [
       ...events.map((e) => ({ along: e.along, html: this.eventItem(e) })),
-      ...res.jams.map((j) => ({ along: o.line.cum[j.from], html: this.jamItem(j, o.line) })),
+      ...res.jams.filter(worthShowing).map((j) => ({ along: o.line.cum[j.from], html: this.jamItem(j, o.line) })),
     ].sort((a, b) => a.along - b.along);
     const hiddenCount = saved.hidden?.length ?? 0;
     const cams = o.cams
@@ -510,25 +530,25 @@ export class RoutePanel {
       ${bottom}`;
   }
 
-  private eventItem(a: EventAlong) {
+  private eventItem(a: Alert) {
     const e = a.item;
     const kind = KINDS[e.kind];
     const dir = DIRECTION_WORDS[e.dir];
     const what = [e.road && `${esc(e.road)}${dir ? ` ${dir}` : ""}`, e.lanes && esc(e.lanes)].filter(Boolean).join(" · ");
-    return `<li class="${a.sameWay ? "" : "other"}"><button type="button" data-act="event" data-id="${e.id}">
+    const aside = a.crossing ? ", on a road it crosses" : a.sameWay ? "" : ", the other direction";
+    return `<li class="${aside ? "other" : ""}"><button type="button" data-act="event" data-id="${e.id}">
       <img src="${markerUrl(kind)}" alt="" width="20" height="20">
-      <span><b>${kind.label}${e.full ? ", all lanes closed" : ""}</b> ${atMile(a.along)}${a.sameWay ? "" : ", the other direction"}
+      <span><b>${kind.label}${e.full ? ", all lanes closed" : ""}</b> ${atMile(a.along)}${aside}
       <small>${what || esc(withoutUpdated(e.desc))}${e.updated ? ` · updated ${ago(e.updated)}` : ""}</small></span></button></li>`;
   }
 
   private jamItem(j: Jam, line: Measured) {
     const from = line.cum[j.from];
     const len = line.cum[j.to] - from;
-    const what = j.category === "ROAD_CLOSURE" ? "Closed" : j.category === "ROAD_WORK" ? "Roadwork, slow" : j.magnitude >= 3 ? "Stop and go" : "Slow";
+    const kind = jamKind(j);
     const lost = j.delay >= 60 ? `, about ${duration(j.delay)} lost` : "";
-    const speed = j.speedKmh !== null && j.category !== "ROAD_CLOSURE" ? ` · about ${Math.round(j.speedKmh / 1.609)} mph` : "";
-    const sw = j.magnitude >= 4 ? "--closure" : j.magnitude >= 3 ? "--crash" : "--slow";
-    return `<li class="jam"><span class="swatch" style="background:var(${sw})"></span>
-      <span><b>${what} for ${miles(len)}</b> ${atMile(from)}${lost}<small>TomTom's speeds${speed}</small></span></li>`;
+    const speed = j.speedKmh !== null && kind !== "closed" ? ` · about ${Math.round(j.speedKmh / 1.609)} mph` : "";
+    return `<li class="jam"><span class="swatch" style="background:var(${JAM_COLORS[kind]})"></span>
+      <span><b>${JAM_WORDS[kind]} for ${miles(len)}</b> ${atMile(from)}${lost}<small>TomTom's speeds${speed}</small></span></li>`;
   }
 }

@@ -19,6 +19,19 @@ export interface Jam {
   category: string;
 }
 
+/** How the page draws and words a stretch. TomTom gives roadwork of unknown delay its
+ *  top magnitude (4, "undefined"), so the category decides before the magnitude does. */
+export type JamKind = "closed" | "heavy" | "slow" | "work";
+
+export function jamKind(j: Jam): JamKind {
+  if (j.category === "ROAD_CLOSURE") return "closed";
+  if (j.category === "ROAD_WORK") return "work";
+  return j.magnitude >= 3 ? "heavy" : "slow";
+}
+
+/** Closures and roadwork always get a line; a slowdown, once it costs half a minute. */
+export const worthShowing = (j: Jam) => j.category === "ROAD_CLOSURE" || j.category === "ROAD_WORK" || j.delay >= 30;
+
 export interface RouteResult {
   line: LngLat[];
   meters: number;

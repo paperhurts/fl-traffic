@@ -50,7 +50,8 @@ body.picking #map canvas { cursor: crosshair }
 #legend img { width: 18px; height: 18px; flex: 0 0 auto }
 #legend .dot { width: 9px; height: 9px; margin: 0 4.5px; border-radius: 50%; background: var(--cam); box-shadow: 0 0 0 1.5px var(--halo) }
 #legend .band { width: 18px; height: 6px; border-radius: 3px; background: var(--route); opacity: .7 }
-#legend .ramp { width: 54px; height: 6px; border-radius: 3px; background: linear-gradient(90deg, #36b37e, #f6c445, #f08a3c, #e5312f, #8b1a1a) }
+/* TomTom's own speed colors, sampled from its relative0 tiles. */
+#legend .ramp { width: 54px; height: 6px; border-radius: 3px; background: linear-gradient(90deg, #2eab30, #f1bf40, #f18237, #e70704, #852e13) }
 #legend .note { color: var(--muted); font-weight: 400 }
 
 /* The card for a tapped camera or event */

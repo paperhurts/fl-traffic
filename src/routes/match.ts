@@ -1,7 +1,9 @@
 // What's along a route: the cameras beside it, in the order you'd pass them,
 // and FL511's events on it, marked by which way they block.
 
-import { angleBetween, bearing, directionBearing, distance, lineAngle, nearBox, place, type Measured } from "../geo";
+import { angleBetween, directionBearing, lineAngle, lineAxis, nearBox, place, type Measured } from "../geo";
+import type { LngLat } from "../geo";
+import { sameRoad } from "../nearby";
 import type { Camera, TrafficEvent } from "../shared/types";
 
 export interface Along<T> {
@@ -10,6 +12,11 @@ export interface Along<T> {
   along: number;
   /** Meters off the route. */
   dist: number;
+}
+
+export interface CameraAlong extends Along<Camera> {
+  /** Its road crosses the route here: kept only because it's close enough to see the route. */
+  crossing: boolean;
 }
 
 export interface EventAlong extends Along<TrafficEvent> {
@@ -33,33 +40,37 @@ export function byRoad(cams: Camera[]): Map<string, Camera[]> {
   return m;
 }
 
-/** True when a camera's road runs across the route there, judged by the line to the
- *  nearest camera on the same road 300 m to 5 km away (closer ones can be the other
- *  side of the same highway). Unknown when the road has no such camera. */
+/** True when a camera's road runs across the route there, judged by the long axis of the
+ *  cameras on the same road within 3 km. One neighbor isn't enough: at a big interchange
+ *  the nearest camera on the crossing road is often on a ramp alongside the route (SR-408's
+ *  at I-4). Unknown, so false, when they're too few or don't make a line. */
 export function crossesRoute(c: Camera, routeBearing: number, roads: Map<string, Camera[]>): boolean {
-  let best: Camera | null = null;
-  let bestD = Infinity;
-  for (const o of roads.get(c.road) ?? []) {
-    if (o === c || Math.abs(o.lat - c.lat) > 0.05 || Math.abs(o.lon - c.lon) > 0.06) continue;
-    const d = distance([c.lon, c.lat], [o.lon, o.lat]);
-    if (d >= 300 && d <= 5000 && d < bestD) {
-      best = o;
-      bestD = d;
-    }
-  }
-  return !!best && lineAngle(bearing([c.lon, c.lat], [best.lon, best.lat]), routeBearing) > 50;
+  const axis = lineAxis((roads.get(c.road) ?? []).map((o) => [o.lon, o.lat] as LngLat), [c.lon, c.lat], 3000);
+  return axis !== null && lineAngle(axis, routeBearing) > 50;
 }
 
-export function camerasAlong(line: Measured, cams: Camera[], roads = byRoad(cams)): Along<Camera>[] {
-  const out: Along<Camera>[] = [];
+export function camerasAlong(line: Measured, cams: Camera[], roads = byRoad(cams)): CameraAlong[] {
+  const out: CameraAlong[] = [];
   for (const c of cams) {
     if (!nearBox(line.bbox, [c.lon, c.lat], CAMERA_METERS)) continue;
     const p = place(line, [c.lon, c.lat]);
     if (p.dist > CAMERA_METERS) continue;
-    if (p.dist > SURE_METERS && crossesRoute(c, p.bearing, roads)) continue;
-    out.push({ item: c, along: p.along, dist: p.dist });
+    const crossing = crossesRoute(c, p.bearing, roads);
+    if (crossing && p.dist > SURE_METERS) continue;
+    out.push({ item: c, along: p.along, dist: p.dist, crossing });
   }
   return out.sort((a, b) => a.along - b.along);
+}
+
+/** True when the route's cameras near an event are all on roads other than the event's:
+ *  the event is on a road the route only crosses (SR-528's ramps where I-4 passes over it).
+ *  Cameras on crossing roads don't count, nor do cameras FL511 names no road for. Unknown,
+ *  so false, where no camera nearby tells which road the route is on. */
+export function onCrossingRoad(e: EventAlong, cams: CameraAlong[], meters = 3000): boolean {
+  if (!e.item.road) return false;
+  // FL511 files Tampa's city cameras under "for City of Tampa cameras", which names no road.
+  const near = cams.filter((c) => !c.crossing && Math.abs(c.along - e.along) <= meters && !/^for /i.test(c.item.road));
+  return near.length > 0 && !near.some((c) => sameRoad(c.item.road, e.item.road));
 }
 
 export function eventsAlong(line: Measured, events: TrafficEvent[]): EventAlong[] {
