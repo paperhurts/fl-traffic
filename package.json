@@ -11,9 +11,11 @@
     "typecheck": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
-    "cameras": "node scripts/cameras.ts"
+    "cameras": "node scripts/cameras.ts",
+    "relay": "node scripts/dev-relay.ts"
   },
   "devDependencies": {
+    "@types/geojson": "^7946.0.16",
     "@types/node": "^26.6.4",
     "typescript": "^7.0.2",
     "vite": "^8.3.4",

@@ -1,0 +1,35 @@
+/* Colors and type. Dark is the default; light applies when the OS prefers it.
+   The map reads these at runtime (src/theme.ts), so keep them plain color values.
+   The page and base colors follow waterways.paperhurts.dev.
+
+   Event markers differ by shape and glyph as well as color, and cards and the
+   key name them in words, so no meaning rests on color alone. */
+:root {
+  --bg: #18160f; --land: #1f1d15; --ink: #ece4cf; --muted: #a39a82; --line: #3a3526;
+  --card: rgba(28, 25, 17, .95); --hi: #fff6de; --accent: #5fd8cc;
+  /* basemap */
+  --sea: #1d2a2e; --green: #21231a; --town: #24221a; --label: #c4baa2; --label-halo: #18160f;
+  --road: #4a4433; --road-minor: #332f24;
+  /* markers: outline, glyph on dark fills, glyph on the yellow construction fill */
+  --halo: #18160f; --glyph: #fffaf0; --glyph-dark: #2a2410;
+  --cam: #8fb8f0; --route: #a794f0;
+  --crash: #f0564a; --incident: #f2b33d; --closure: #d8306e; --slow: #f0843c; --work: #f2d45c;
+  --disabled: #8fa4c8; --weather: #5fd8cc; --event: #9bd36a;
+
+  --serif: "Spectral", Georgia, "Times New Roman", serif;
+  --sans: "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #dfe2d8; --land: #e9ebe3; --ink: #1f2419; --muted: #5b6152; --line: #c3c7b8;
+    --card: rgba(240, 241, 235, .97); --hi: #111; --accent: #0a8f86;
+    --sea: #bccfd3; --green: #dbe2d0; --town: #e2e3da; --label: #343a2e; --label-halo: #f1f2ec;
+    --halo: #ffffff; --glyph: #ffffff; --glyph-dark: #2a2410;
+    --cam: #2a5db0; --route: #6b50c8;
+    --crash: #d0281c; --incident: #b07400; --closure: #a3124a; --slow: #d2601a; --work: #e0b81c;
+    --disabled: #4f6a96; --weather: #0a8f86; --event: #4d8a1f;
+    color-scheme: light;
+  }
+}

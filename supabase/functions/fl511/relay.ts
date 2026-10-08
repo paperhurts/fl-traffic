@@ -32,7 +32,14 @@ export const FRESH_MS = 60_000;
 const MAX_ROWS = 2000;
 /** The startDate column: new events land on the last page, so paging shifts less while FL511 updates. */
 const ORDER_COLUMN = 8;
-const ORIGINS = ["https://paperhurts.github.io", "https://traffic.paperhurts.dev", "http://localhost:5191", "http://localhost:4191"];
+const ORIGINS = [
+  "https://paperhurts.github.io",
+  "https://traffic.paperhurts.dev",
+  "http://localhost:5191",
+  "http://localhost:4191",
+  "http://127.0.0.1:5191",
+  "http://127.0.0.1:4191",
+];
 
 export function createRelay(env: RelayEnv, fetcher: Fetcher = fetch, clock: () => number = Date.now) {
   let cache: { at: number; body: EventsResponse } | null = null;

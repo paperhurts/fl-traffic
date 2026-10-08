@@ -8,6 +8,8 @@ export default defineConfig({
   server: { port: 5191, strictPort: true },
   preview: { port: 4191, strictPort: true },
   build: { target: "es2022" },
+  // MapLibre starts its worker as a module worker.
+  worker: { format: "es" },
   test: {
     include: ["src/**/*.test.ts", "tests/**/*.test.ts"],
   },
