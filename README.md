@@ -1,9 +1,9 @@
 # Florida traffic
 
-A live map of Florida's roads, built around the drives you make: FL511's crashes, closures, slowdowns, and construction, its 4,961 traffic cameras, and TomTom's speeds on every road.
+A live map of Florida's roads, built around the drives you make, with FL511's crashes, closures, slowdowns, and construction, its 4,961 traffic cameras, and TomTom's speeds on every road: **[fl-traffic.paperhurts.dev](https://fl-traffic.paperhurts.dev/)**
 
 - **The map** draws every FL511 camera and every event FL511 reports, checked every minute. Tap a camera for its latest still (reloaded each minute) and a link to its live video on FL511. Tap an event for FL511's account of it (what happened, which lanes, when it was reported and updated) and stills from the nearest cameras, on the same road first. TomTom's speed tiles color every road from free-flowing to stopped. Construction zones are off until you turn them on.
-- **My routes** keeps the drives you make in your browser. Each one gets its time in today's traffic against the usual time (TomTom), any crash, closure, or slowdown FL511 reports along it, in the order you'd reach it and marked when it's on the other side of the road, TomTom's slow stretches, and the route's cameras in the order you'd pass them, their stills loading as you scroll. *The trip back* reverses a route; a camera on a road that only crosses yours can be left off. The page opens on the route you last looked at.
+- **My routes** keeps the drives you make in your browser. Each one gets its time in today's traffic against the usual time (TomTom), any crash, closure, or slowdown FL511 reports along it, in the order you'd reach it and dimmed when it's on the other side of the road or on a road the route only crosses, TomTom's slow stretches and roadwork, and the route's cameras in the order you'd pass them, their stills loading as you scroll. *The trip back* reverses a route; a camera on a road that only crosses yours can be left off. The page opens on the route you last looked at.
 
 Check before you go; don't use it while driving.
 
