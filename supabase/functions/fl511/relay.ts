@@ -36,7 +36,7 @@ const ORDER_COLUMN = 8;
 const ORIGINS = [
   "https://paperhurts.github.io",
   "https://paperhurts.dev",
-  "https://traffic.paperhurts.dev",
+  "https://fl-traffic.paperhurts.dev",
   "http://localhost:5191",
   "http://localhost:4191",
   "http://127.0.0.1:5191",

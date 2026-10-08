@@ -30,7 +30,7 @@ function fakeFl511(n: number) {
 }
 
 const env = (vars: Record<string, string> = {}) => ({ get: (k: string) => vars[k] });
-const get = (path = "/fl511", origin = "https://traffic.paperhurts.dev") =>
+const get = (path = "/fl511", origin = "https://fl-traffic.paperhurts.dev") =>
   new Request(`https://example.supabase.co/functions/v1${path}`, { headers: { Origin: origin } });
 
 describe("relay", () => {
@@ -96,7 +96,7 @@ describe("relay", () => {
 
   it("lets only the site's own pages read it", async () => {
     const relay = createRelay(env(), fakeFl511(1).fetcher);
-    expect((await relay.handle(get())).headers.get("Access-Control-Allow-Origin")).toBe("https://traffic.paperhurts.dev");
+    expect((await relay.handle(get())).headers.get("Access-Control-Allow-Origin")).toBe("https://fl-traffic.paperhurts.dev");
     expect((await relay.handle(get("/fl511", "https://elsewhere.example"))).headers.get("Access-Control-Allow-Origin")).toBeNull();
     const custom = createRelay(env({ ALLOWED_ORIGINS: "https://a.example, https://b.example" }), fakeFl511(1).fetcher);
     expect((await custom.handle(get("/fl511", "https://b.example"))).headers.get("Access-Control-Allow-Origin")).toBe("https://b.example");
