@@ -1,0 +1,14 @@
+import { defineConfig } from "vitest/config";
+
+// `base: "./"` keeps every URL relative, so the same build works at
+// paperhurts.github.io/fl-traffic/, at a custom domain, or under `vite preview`.
+export default defineConfig({
+  base: "./",
+  // Other local projects use 5173/4173, 5180, and 5190/4190 (waterways); stay off them.
+  server: { port: 5191, strictPort: true },
+  preview: { port: 4191, strictPort: true },
+  build: { target: "es2022" },
+  test: {
+    include: ["src/**/*.test.ts", "tests/**/*.test.ts"],
+  },
+});
