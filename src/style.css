@@ -1,0 +1,170 @@
+@import "./tokens.css";
+
+:root { box-sizing: border-box }
+*, *::before, *::after { box-sizing: inherit }
+html, body { height: 100%; margin: 0 }
+body { background: var(--bg); color: var(--ink); font-family: var(--serif); overflow: hidden; -webkit-font-smoothing: antialiased }
+#wrap {
+  height: 100%; display: flex; flex-direction: column;
+  padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+header { padding: 12px 16px 8px; max-width: 52rem; flex-shrink: 0 }
+h1 { font-weight: 400; font-size: clamp(1.4rem, 4.8vw, 2.2rem); line-height: 1.08; margin: 0 0 .25em; letter-spacing: -.01em }
+.lede { font-size: .92rem; line-height: 1.45; color: var(--muted); margin: 0 }
+.lede b { color: var(--ink); font-weight: 600 }
+.lede .warn { color: var(--crash) }
+
+#main { flex: 1; min-height: 0; display: flex; position: relative }
+#stage { position: relative; flex: 1; min-width: 0; min-height: 180px }
+#map { position: absolute; inset: 0 }
+body.picking #map canvas { cursor: crosshair }
+
+/* The chip row: the page's own controls only. */
+.tools { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 8px 12px; flex-shrink: 0 }
+.tools::-webkit-scrollbar { display: none }
+.tools button, .chip {
+  flex: 0 0 auto; font: 600 .84rem var(--sans); color: var(--ink); background: var(--card);
+  border: 1px solid var(--line); border-radius: 999px; padding: 7px 12px; cursor: pointer;
+}
+.tools button[aria-pressed="true"] { background: var(--accent); color: var(--bg); border-color: var(--accent) }
+.tools button:focus-visible, .chip:focus-visible, #card button:focus-visible, #panel button:focus-visible, #panel input:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+#status { font: 400 .76rem/1.35 var(--sans); color: var(--muted); padding: 0 16px 8px; flex-shrink: 0 }
+#status a { color: inherit }
+
+/* The key */
+#legend {
+  position: absolute; left: 10px; top: 10px; z-index: 3; max-width: calc(100% - 70px);
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  font: 500 .8rem/1.3 var(--sans); color: var(--ink);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+#legend summary { cursor: pointer; padding: 6px 11px; font-weight: 600; list-style: none }
+#legend summary::-webkit-details-marker { display: none }
+#legend summary::after { content: " ▾"; color: var(--muted) }
+#legend[open] summary::after { content: " ▴" }
+#legend ul { list-style: none; margin: 0; padding: 0 11px 9px; display: grid; gap: 4px }
+#legend li { display: flex; align-items: center; gap: 7px }
+#legend img { width: 18px; height: 18px; flex: 0 0 auto }
+#legend .dot { width: 9px; height: 9px; margin: 0 4.5px; border-radius: 50%; background: var(--cam); box-shadow: 0 0 0 1.5px var(--halo) }
+#legend .band { width: 18px; height: 6px; border-radius: 3px; background: var(--route); opacity: .7 }
+/* TomTom's own speed colors, sampled from its relative0 tiles. */
+#legend .ramp { width: 54px; height: 6px; border-radius: 3px; background: linear-gradient(90deg, #2eab30, #f1bf40, #f18237, #e70704, #852e13) }
+#legend .note { color: var(--muted); font-weight: 400 }
+
+/* The card for a tapped camera or event */
+#card {
+  position: absolute; left: 10px; right: 10px; bottom: 10px; max-width: 27rem; max-height: calc(100% - 20px); overflow-y: auto; z-index: 4;
+  background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 15px 13px;
+  font-size: .94rem; line-height: 1.45; display: none;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+#card.on { display: block }
+#card h2 { font: 600 1.08rem/1.2 var(--sans); margin: 0 0 .2em; padding-right: 2rem }
+#card .kind { font: 500 .8rem var(--sans); color: var(--muted); margin-bottom: .35em }
+#card p { margin: .3em 0 0 }
+#card .when { font: 400 .8rem var(--sans); color: var(--muted) }
+#card .lanes { font: 600 .86rem var(--sans) }
+#card .links { margin-top: .55em; font: 600 .86rem var(--sans) }
+#card .links a { color: var(--accent) }
+#cardX { position: absolute; right: 6px; top: 4px; background: none; border: 0; color: var(--muted); font: 600 1.35rem/1 var(--sans); cursor: pointer; padding: 4px 8px }
+.ev-head { display: flex; align-items: center; gap: 8px }
+.ev-head h2 { margin: 0 !important }
+.stills { display: grid; gap: 6px; margin-top: .4em }
+.still { display: block; width: 100%; max-height: 42vh; object-fit: contain; background: var(--line); border-radius: 8px; min-height: 120px }
+.nearby { margin-top: .7em }
+.thumbs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px }
+.thumbs button { flex: 0 0 132px; display: grid; gap: 3px; background: none; border: 0; padding: 0; color: var(--ink); font: 500 .74rem/1.2 var(--sans); text-align: left; cursor: pointer }
+.thumb { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: var(--line); border-radius: 6px; display: block }
+
+/* My routes */
+#panel {
+  flex: 0 0 390px; overflow-y: auto; overscroll-behavior: contain; border-left: 1px solid var(--line); background: var(--bg);
+  padding: 12px 16px 28px; font-size: .95rem; line-height: 1.45;
+}
+#panel[hidden] { display: none }
+#panel .ph { display: flex; align-items: baseline; gap: 10px; margin-bottom: .3em }
+#panel h2 { font: 600 1.15rem/1.2 var(--sans); margin: 0; flex: 1 }
+#panel h3 { font: 600 .92rem var(--sans); margin: 1.1em 0 .4em; color: var(--ink) }
+#panel h3 .count { color: var(--muted); font-weight: 500 }
+#panel p { margin: .4em 0 }
+#panel .hint { color: var(--muted); font-size: .86rem }
+#panel .err { color: var(--crash); font-size: .9rem }
+#panel .x { background: none; border: 0; color: var(--muted); font: 600 1.35rem/1 var(--sans); cursor: pointer; padding: 2px 6px }
+#panel button.link { background: none; border: 0; padding: 4px 0; color: var(--accent); font: 600 .86rem var(--sans); cursor: pointer }
+#panel button.primary {
+  font: 600 .9rem var(--sans); color: var(--bg); background: var(--accent); border: 0; border-radius: 999px; padding: 9px 16px; cursor: pointer; margin-top: .6em;
+}
+#panel button.primary:disabled { opacity: .45; cursor: default }
+#panel .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap }
+#panel .acts { gap: 6px; margin: .5em 0 .2em }
+#panel .tail { margin-top: 1.4em; padding-top: .6em; border-top: 1px solid var(--line) }
+#panel .ends { color: var(--muted); margin: 0 0 .2em; font-size: .9rem }
+#panel ol { list-style: none; margin: 0; padding: 0 }
+.routes { display: grid; gap: 8px; margin: .6em 0 }
+.route {
+  width: 100%; text-align: left; display: grid; gap: 2px; padding: 10px 12px; cursor: pointer;
+  background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; font: inherit;
+}
+.rname { font: 600 1rem var(--sans) }
+.rsum { color: var(--muted); font-size: .88rem }
+.rsum b { color: var(--ink) }
+.warn { color: var(--crash); font-weight: 600 }
+.sum { margin: .7em 0 .2em }
+.sum .big { font: 600 2rem/1.05 var(--sans) }
+.sum div:last-child { color: var(--muted); font-size: .88rem }
+.alerts { display: grid; gap: 4px }
+.alerts li > button, .alerts li.jam {
+  display: flex; gap: 9px; align-items: flex-start; width: 100%; text-align: left; padding: 6px 4px;
+  background: none; border: 0; color: var(--ink); font: inherit; cursor: pointer; border-radius: 8px;
+}
+.alerts li > button:hover { background: var(--card) }
+.alerts img { flex: 0 0 auto; margin-top: 2px }
+.alerts small { display: block; color: var(--muted); font-size: .82rem }
+.alerts li.other { opacity: .6 }
+.alerts .swatch { flex: 0 0 20px; height: 6px; border-radius: 3px; margin-top: 8px }
+.cams { display: grid; gap: 10px }
+.cams li { display: grid; gap: 2px }
+.cams .cam { display: grid; grid-template-columns: 120px 1fr; gap: 10px; align-items: start; text-align: left; background: none; border: 0; padding: 0; color: var(--ink); font: .88rem/1.3 var(--sans); cursor: pointer }
+.cams .cam b { display: block; color: var(--muted); font-weight: 600 }
+.cams .hide { justify-self: start; font-size: .78rem !important; color: var(--muted) !important; padding: 0 !important; margin-left: 130px }
+.place { border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px 10px; margin: .6em 0 }
+.place legend { font: 600 .86rem var(--sans); padding: 0 4px }
+.place .chosen { font-weight: 600; margin: .2em 0 .4em }
+.find { display: flex; gap: 6px }
+.find input, .name input {
+  flex: 1; min-width: 0; font: 1rem var(--serif); color: var(--ink); background: var(--card);
+  border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px;
+}
+.find button { font: 600 .86rem var(--sans); color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 0 12px; cursor: pointer }
+.found { list-style: none; margin: .4em 0 0; padding: 0; display: grid; gap: 2px }
+.found button { width: 100%; text-align: left; background: none; border: 0; color: var(--ink); font: .9rem var(--serif); padding: 5px 4px; cursor: pointer; border-radius: 6px }
+.found button:hover { background: var(--card) }
+.name { display: grid; gap: 4px; font: 600 .86rem var(--sans); margin: .6em 0 }
+.picking-hint { color: var(--accent) !important; font-weight: 600 }
+
+/* MapLibre's controls in the page's colors */
+.maplibregl-ctrl-group { background: var(--card) !important; border: 1px solid var(--line); box-shadow: none !important }
+.maplibregl-ctrl-group button + button { border-top-color: var(--line) !important }
+.maplibregl-ctrl-attrib { background: var(--card) !important; color: var(--muted); font-family: var(--sans) }
+.maplibregl-ctrl-attrib a { color: var(--muted) !important }
+@media (prefers-color-scheme: dark) {
+  .maplibregl-ctrl-group .maplibregl-ctrl-icon, .maplibregl-ctrl-attrib-button { filter: invert(1) }
+}
+
+@media (max-width: 760px) {
+  header { padding: 10px 14px 6px }
+  .lede { font-size: .86rem }
+  #main { flex-direction: column }
+  /* A fixed height: if it followed its content, the map would change size under a route just fitted to it. */
+  #panel { flex: 0 0 56%; border-left: 0; border-top: 1px solid var(--line); padding: 10px 14px 20px }
+  #legend:not([open]) { max-width: none }
+  /* With routes open the phone needs the room; the map's own credits name every source. */
+  body.routes-open #status { display: none }
+}
+@media (min-width: 900px) {
+  header { padding: 18px 24px 8px }
+  #card { left: auto; right: 14px; bottom: 14px }
+}

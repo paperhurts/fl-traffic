@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Florida traffic</title>
+<meta name="description" content="Live traffic on Florida's roads: FL511's crashes, closures, and slowdowns, its 4,961 traffic cameras, and TomTom's speeds, around the drives you make.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://fl-traffic.paperhurts.dev/">
+<meta property="og:title" content="Florida traffic">
+<meta property="og:description" content="FL511's crashes, closures, and slowdowns, its traffic cameras, and TomTom's speeds, around the drives you make.">
+<meta name="theme-color" content="#18160f" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#dfe2d8" media="(prefers-color-scheme: light)">
+<link rel="icon" href="./favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&family=Barlow+Semi+Condensed:wght@400;500;600&display=swap" rel="stylesheet">
+<script type="module" src="/src/main.ts"></script>
+</head>
+<body>
+<div id="wrap">
+<header>
+  <h1>Florida <em>traffic</em></h1>
+  <p class="lede" id="lede">Loading FL511's crashes, closures, and cameras…</p>
+</header>
+<div id="main">
+  <div id="stage">
+    <div id="map" role="region" aria-label="Map of Florida's roads with TomTom's live speeds and FL511's crashes, closures, slowdowns, and traffic cameras"></div>
+    <details id="legend">
+      <summary>Key</summary>
+      <ul id="legendList"></ul>
+    </details>
+    <div id="card" role="dialog" aria-live="polite"><button type="button" id="cardX" aria-label="Close">×</button><div id="cardBody"></div></div>
+  </div>
+  <aside id="panel" aria-label="My routes" hidden><div id="panelBody"></div></aside>
+</div>
+<div class="tools">
+  <button id="bRoutes" type="button" aria-pressed="false">My routes</button>
+  <button id="bSpeeds" type="button" aria-pressed="true" hidden>Speeds</button>
+  <button id="bCams" type="button" aria-pressed="true">Cameras</button>
+  <button id="bWork" type="button" aria-pressed="false">Construction</button>
+  <button id="bAll" type="button">Whole state</button>
+</div>
+<div id="status">Crashes, closures, slowdowns, and cameras: <a href="https://fl511.com/" target="_blank" rel="noopener">FL511</a> (FDOT), checked every minute. Speeds and drive times: TomTom. Map: OpenFreeMap and OpenStreetMap. Check before you go; don't use it while driving.</div>
+</div>
+</body>
+</html>
