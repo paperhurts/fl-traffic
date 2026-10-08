@@ -11,7 +11,7 @@ import type { Camera, EventKind, TrafficEvent } from "../shared/types";
 import { byRoad, camerasAlong, eventsAlong, type Along, type EventAlong } from "./match";
 import { loadRoutes, newId, recall, remember, saveRoutes, type Place, type SavedRoute } from "./store";
 import { nameOf, route as fetchRoute, search, type Jam, type RouteResult } from "./tomtom";
-import { atMile, compareUsual, countWords } from "./words";
+import { atMile, compareUsual, countWords, milepost } from "./words";
 
 export interface PanelDeps {
   map: TrafficMap;
@@ -58,6 +58,10 @@ export class RoutePanel {
   private fitWhenReady: string | null = null;
   private draft: Draft = { from: null, to: null, name: "" };
   private found: { from: Place[]; to: Place[] } = { from: [], to: [] };
+  /** What's typed in the search boxes, kept across redraws. */
+  private queries = { from: "", to: "" };
+  /** The open route's cameras, worked out once per answer from TomTom. */
+  private along: { result: RouteResult; hidden: string; opened: Opened } | null = null;
   private roads: Map<string, Camera[]>;
   private visible = new Set<HTMLImageElement>();
   private io: IntersectionObserver;
@@ -77,7 +81,7 @@ export class RoutePanel {
           } else this.visible.delete(img);
         }
       },
-      { root: this.body, rootMargin: "200px 0px" },
+      { root: this.el, rootMargin: "200px 0px" },
     );
     this.body.addEventListener("click", (e) => this.click(e));
     this.body.addEventListener("submit", (e) => {
@@ -89,6 +93,8 @@ export class RoutePanel {
     this.body.addEventListener("input", (e) => {
       const t = e.target as HTMLInputElement;
       if (t.id === "rName") this.draft.name = t.value;
+      else if (t.id === "q-from") this.queries.from = t.value;
+      else if (t.id === "q-to") this.queries.to = t.value;
     });
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible" && this.isOpen) this.refresh(false);
@@ -186,13 +192,16 @@ export class RoutePanel {
 
   private go(view: View) {
     this.view = view;
+    this.picking = null;
+    document.body.classList.remove("picking");
     remember("route", view.name === "detail" ? view.id : null);
     if (view.name === "edit") {
       const r = view.id ? this.routeById(view.id) : null;
       this.draft = r ? { from: r.from, to: r.to, name: r.name } : { from: null, to: null, name: "" };
       this.found = { from: [], to: [] };
+      this.queries = { from: "", to: "" };
     }
-    this.body.scrollTop = 0;
+    this.el.scrollTop = 0;
     // Show the whole route on opening it, now or when TomTom answers.
     this.fitWhenReady = view.name === "detail" ? this.routeKey(view.id, view.back) : null;
     const res = this.fitWhenReady ? this.results.get(this.fitWhenReady) : undefined;
@@ -243,6 +252,7 @@ export class RoutePanel {
         const which = t.dataset.which as "from" | "to";
         this.draft[which] = this.found[which][Number(t.dataset.i)];
         this.found[which] = [];
+        this.queries[which] = "";
         return this.render();
       }
       case "fit": {
@@ -342,14 +352,17 @@ export class RoutePanel {
     if (v.name !== "detail") return null;
     const result = this.results.get(this.routeKey(v.id, v.back));
     if (!result) return null;
+    const hiddenIds = this.routeById(v.id)?.hidden ?? [];
+    const hidden = hiddenIds.join(",");
+    if (this.along?.result === result && this.along.hidden === hidden) return this.along.opened;
     const line = measure(result.line);
-    const hidden = new Set(this.routeById(v.id)?.hidden ?? []);
-    const cams = camerasAlong(line, this.deps.cameras, this.roads).filter((a) => !hidden.has(a.item.id));
-    return { result, line, cams };
+    const cams = camerasAlong(line, this.deps.cameras, this.roads).filter((a) => !hiddenIds.includes(a.item.id));
+    this.along = { result, hidden, opened: { result, line, cams } };
+    return this.along.opened;
   }
 
   private render() {
-    for (const img of this.visible) this.io.unobserve(img);
+    this.io.disconnect();
     this.visible.clear();
     const v = this.view;
     let html: string;
@@ -425,7 +438,7 @@ export class RoutePanel {
     const picking = this.picking === which ? `<p class="hint picking-hint">Tap the map where the drive ${which === "from" ? "starts" : "ends"}.</p>` : "";
     return `<fieldset class="place"><legend>${label}</legend>
       ${p ? `<p class="chosen">${esc(p.label)}</p>` : ""}
-      <form data-search="${which}" class="find"><input id="q-${which}" type="search" placeholder="Search a place or address" aria-label="${label}: search a place or address" enterkeyhint="search"><button type="submit">Find</button></form>
+      <form data-search="${which}" class="find"><input id="q-${which}" type="search" value="${esc(this.queries[which])}" placeholder="Search a place or address" aria-label="${label}: search a place or address" enterkeyhint="search"><button type="submit">Find</button></form>
       ${found ? `<ul class="found">${found}</ul>` : ""}
       <div class="row"><button type="button" class="link" data-act="here" data-which="${which}">Where I am</button><button type="button" class="link" data-act="pick" data-which="${which}">Pick on the map</button></div>
       ${picking}
@@ -476,7 +489,7 @@ export class RoutePanel {
       .map(
         (a) => `<li><button type="button" class="cam" data-act="cam" data-id="${a.item.id}">
           <img class="thumb" data-image="${a.item.images[0]}" alt="Latest still from ${esc(cameraName(a.item.location))}" decoding="async">
-          <span><b>${atMile(a.along).replace(/^at /, "")}</b> ${esc(cameraName(a.item.location))}</span></button>
+          <span><b>${milepost(a.along)}</b> ${esc(cameraName(a.item.location))}</span></button>
           <button type="button" class="link hide" data-act="hide" data-id="${a.item.id}" aria-label="Leave this camera off the route">Not on my way</button></li>`,
       )
       .join("");

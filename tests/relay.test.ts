@@ -70,6 +70,23 @@ describe("relay", () => {
     expect(body.events).toHaveLength(5);
   });
 
+  it("doesn't ask a failing FL511 again for a minute", async () => {
+    const fl = fakeFl511(5);
+    let now = 0;
+    const relay = createRelay(env(), fl.fetcher, () => now);
+    await relay.events();
+    fl.fail(true);
+    now += FRESH_MS + 1;
+    await relay.events();
+    const asked = fl.calls.length;
+    now += 10_000;
+    expect((await relay.events()).stale).toBe(true);
+    expect(fl.calls).toHaveLength(asked);
+    fl.fail(false);
+    now += FRESH_MS;
+    expect((await relay.events()).stale).toBeUndefined();
+  });
+
   it("answers 502 when FL511 fails and there's nothing cached", async () => {
     const fl = fakeFl511(5);
     fl.fail(true);

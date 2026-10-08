@@ -19,13 +19,16 @@ const lede = $("lede");
 const LEDE_KINDS: EventKind[] = ["crash", "closure", "congestion"];
 
 async function start() {
-  const view = recall<{ center: LngLat; zoom: number }>("view");
+  const saved = recall<{ center: LngLat; zoom: number }>("view");
+  const view = saved && saved.center?.every(Number.isFinite) && Number.isFinite(saved.zoom) ? saved : null;
   const [tm, cams, config] = await Promise.all([TrafficMap.create($("map"), view), loadCameras(), fetchConfig()]);
   const camById = new Map(cams.cameras.map((c) => [c.id, c]));
   let events: TrafficEvent[] = [];
   let evById = new Map<number, TrafficEvent>();
   let last: EventsResponse | null = null;
   let failed = false;
+  /** The event whose card is open, to bring up to date with each refresh. */
+  let shownEvent: number | null = null;
 
   tm.setCameras(cams.cameras);
 
@@ -42,6 +45,7 @@ async function start() {
   function openCamera(id: number, bringIntoView = false) {
     const c = camById.get(id);
     if (!c) return;
+    shownEvent = null;
     card.camera(c);
     tm.select([c.lon, c.lat]);
     if (bringIntoView) tm.show([c.lon, c.lat]);
@@ -50,12 +54,16 @@ async function start() {
   function openEvent(id: number, bringIntoView = false) {
     const e = evById.get(id);
     if (!e) return;
+    shownEvent = id;
     card.event(e, nearbyCameras(cams.cameras, [e.lon, e.lat], e.road));
     tm.select([e.lon, e.lat]);
     if (bringIntoView) tm.show([e.lon, e.lat]);
   }
 
-  card.onClose = () => tm.select(null);
+  card.onClose = () => {
+    shownEvent = null;
+    tm.select(null);
+  };
   card.onCamera = (id) => openCamera(id, true);
   tm.onClick = (at, pick) => {
     if (panel.picking) panel.picked(at);
@@ -87,6 +95,8 @@ async function start() {
       failed = false;
       tm.setEvents(events);
       panel.eventsChanged();
+      // An open card keeps what it last said if FL511 has since cleared the event.
+      if (shownEvent !== null && card.isOpen && evById.has(shownEvent)) openEvent(shownEvent);
     } catch {
       failed = true;
     }

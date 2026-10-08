@@ -34,3 +34,6 @@ export function countWords(events: EventAlong[]): string {
 
 /** "at the start", "at mile 12" */
 export const atMile = (meters: number) => (meters < 0.5 * 1609.344 ? "at the start" : `at mile ${Math.round(meters / 1609.344)}`);
+
+/** "Start", "Mile 12": where a camera is on the route. */
+export const milepost = (meters: number) => (meters < 0.5 * 1609.344 ? "Start" : `Mile ${Math.round(meters / 1609.344)}`);

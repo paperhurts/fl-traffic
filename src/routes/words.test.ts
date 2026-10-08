@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { TrafficEvent } from "../shared/types";
 import type { EventAlong } from "./match";
 import type { RouteResult } from "./tomtom";
-import { atMile, compareUsual, countWords } from "./words";
+import { atMile, compareUsual, countWords, milepost } from "./words";
 
 const result = (seconds: number, usual: number | null, delay = 0): RouteResult => ({ line: [], meters: 0, seconds, delay, noTraffic: null, usual, jams: [], at: 0 });
 
@@ -32,5 +32,7 @@ describe("atMile", () => {
   it("rounds to the mile", () => {
     expect(atMile(300)).toBe("at the start");
     expect(atMile(19_400)).toBe("at mile 12");
+    expect(milepost(300)).toBe("Start");
+    expect(milepost(19_400)).toBe("Mile 12");
   });
 });

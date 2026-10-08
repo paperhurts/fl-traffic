@@ -46,6 +46,7 @@ const ORIGINS = [
 export function createRelay(env: RelayEnv, fetcher: Fetcher = fetch, clock: () => number = Date.now) {
   let cache: { at: number; body: EventsResponse } | null = null;
   let inflight: Promise<EventsResponse> | null = null;
+  let failedAt = -Infinity;
 
   async function getJson<T>(path: string): Promise<T> {
     const res = await fetcher(BASE + path, {
@@ -71,13 +72,23 @@ export function createRelay(env: RelayEnv, fetcher: Fetcher = fetch, clock: () =
     return { fetched: new Date(clock()).toISOString(), events: buildEvents(rows, coords) };
   }
 
-  /** Cached events; one fetch at a time; the last good copy, marked stale, when FL511 fails. */
+  /** Cached events; one fetch at a time; the last good copy, marked stale, when FL511 fails,
+   *  and no asking again for a minute after a failure. */
   async function events(): Promise<EventsResponse> {
-    if (cache && clock() - cache.at < FRESH_MS) return cache.body;
+    const now = clock();
+    if (cache && now - cache.at < FRESH_MS) return cache.body;
+    if (now - failedAt < FRESH_MS) {
+      if (cache) return { ...cache.body, stale: true };
+      throw new Error("FL511 failed less than a minute ago");
+    }
     inflight ??= fetchEvents()
       .then((body) => {
         cache = { at: clock(), body };
         return body;
+      })
+      .catch((e) => {
+        failedAt = clock();
+        throw e;
       })
       .finally(() => {
         inflight = null;
