@@ -116,6 +116,8 @@ export class TrafficMap {
   private showCams = true;
   private showWork = false;
   private onFlowError: () => void = () => {};
+  /** Tiles TomTom refused since the last reload; a few in a row mean the key or its allowance, not a blip. */
+  private flowErrors = 0;
 
   private constructor(map: MapLibre) {
     this.map = map;
@@ -130,7 +132,7 @@ export class TrafficMap {
       map.getCanvas().style.cursor = this.pickAt([e.point.x, e.point.y]) ? "pointer" : "";
     });
     map.on("error", (e) => {
-      if ((e as { sourceId?: string }).sourceId === "flow") this.onFlowError();
+      if ((e as { sourceId?: string }).sourceId === "flow" && ++this.flowErrors === 4) this.onFlowError();
     });
     // MapLibre opens the compact credits until the first drag; on a phone they cover the bottom of the map.
     map.once("load", () => {
@@ -381,6 +383,7 @@ export class TrafficMap {
   refreshSpeeds() {
     if (!this.flowKey || !this.showFlow) return;
     this.flowStamp = Date.now();
+    this.flowErrors = 0;
     (this.map.getSource("flow") as RasterTileSource | undefined)?.setTiles([flowUrl(this.flowKey, this.flowStamp)]);
   }
 

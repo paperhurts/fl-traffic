@@ -32,8 +32,10 @@ export const FRESH_MS = 60_000;
 const MAX_ROWS = 2000;
 /** The startDate column: new events land on the last page, so paging shifts less while FL511 updates. */
 const ORDER_COLUMN = 8;
+/** Where the page is served: GitHub Pages (at paperhurts.dev/fl-traffic/ when the user site has that domain), its own domain, and the dev servers. */
 const ORIGINS = [
   "https://paperhurts.github.io",
+  "https://paperhurts.dev",
   "https://traffic.paperhurts.dev",
   "http://localhost:5191",
   "http://localhost:4191",
