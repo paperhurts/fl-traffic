@@ -8,11 +8,11 @@ import {
   GeolocateControl,
   Map as MapLibre,
   NavigationControl,
-  RasterTileSource,
   setWorkerUrl,
   type MapGeoJSONFeature,
   type PointLike,
   type StyleSpecification,
+  type VectorTileSource,
 } from "maplibre-gl";
 import type { FeatureCollection, Point } from "geojson";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -23,6 +23,7 @@ import type { LngLat } from "./geo";
 import { KINDS, markerImage } from "./icons";
 import type { JamKind } from "./routes/tomtom";
 import type { Camera, EventKind, TrafficEvent } from "./shared/types";
+import { flowUrl, SPEED_LAYERS, speedLayers, type Bands, type SpeedColors } from "./speeds";
 import { cssVar, isDark } from "./theme";
 
 export type Pick = { type: "camera"; id: number } | { type: "event"; id: number };
@@ -40,11 +41,15 @@ const FL511_CREDIT = 'Cameras and events <a href="https://fl511.com/" target="_b
 type Features = FeatureCollection;
 const none = (): Features => ({ type: "FeatureCollection", features: [] });
 
-/** Speed tiles: relative0 colors each road by its speed as a share of free flow. Its dark
- *  version (relative0-dark) is too dim on this dark map to tell orange from green, so both
- *  themes use relative0, a little softer in dark mode. */
-const flowUrl = (key: string, stamp: number) =>
-  `https://api.tomtom.com/traffic/map/4/tile/flow/relative0/{z}/{x}/{y}.png?key=${encodeURIComponent(key)}&tileSize=512&t=${stamp}`;
+/** The speed colors in the current scheme, from tokens.css. */
+const bands = (suffix: string): Bands => ({
+  free: cssVar(`--flow-free${suffix}`),
+  slow: cssVar(`--flow-slow${suffix}`),
+  heavy: cssVar(`--flow-heavy${suffix}`),
+  stopped: cssVar(`--flow-stopped${suffix}`),
+  closed: cssVar(`--flow-closed${suffix}`),
+});
+const speedColors = (): SpeedColors => ({ line: bands(""), edge: bands("-edge"), dash: cssVar("--flow-dash") });
 
 /** The basemap with its land, water, and labels in the page's colors. If OpenFreeMap
  *  doesn't answer, a blank one, so FL511's cameras and events still show. */
@@ -356,21 +361,11 @@ export class TrafficMap {
   private addFlow() {
     if (!this.flowKey || this.map.getSource("flow") || !this.map.getLayer("route-jam")) return;
     this.map.addSource("flow", {
-      type: "raster",
+      type: "vector",
       tiles: [flowUrl(this.flowKey, this.flowStamp)],
-      tileSize: 512,
       attribution: 'Speeds <a href="https://www.tomtom.com/" target="_blank" rel="noopener">© TomTom</a>',
     });
-    this.map.addLayer(
-      {
-        id: "flow",
-        type: "raster",
-        source: "flow",
-        layout: { visibility: this.showFlow ? "visible" : "none" },
-        paint: { "raster-opacity": isDark() ? 0.8 : 0.92, "raster-fade-duration": 0 },
-      },
-      "route-jam",
-    );
+    for (const layer of speedLayers(speedColors(), this.showFlow)) this.map.addLayer(layer, "route-jam");
   }
 
   /** Turns TomTom's speeds on with a key. */
@@ -386,7 +381,7 @@ export class TrafficMap {
 
   showSpeeds(on: boolean) {
     this.showFlow = on;
-    if (this.map.getLayer("flow")) this.map.setLayoutProperty("flow", "visibility", on ? "visible" : "none");
+    for (const id of SPEED_LAYERS) if (this.map.getLayer(id)) this.map.setLayoutProperty(id, "visibility", on ? "visible" : "none");
   }
 
   /** TomTom updates speeds every minute; new tile URLs make the map fetch them again. */
@@ -394,7 +389,7 @@ export class TrafficMap {
     if (!this.flowKey || !this.showFlow) return;
     this.flowStamp = Date.now();
     this.flowErrors = 0;
-    (this.map.getSource("flow") as RasterTileSource | undefined)?.setTiles([flowUrl(this.flowKey, this.flowStamp)]);
+    (this.map.getSource("flow") as VectorTileSource | undefined)?.setTiles([flowUrl(this.flowKey, this.flowStamp)]);
   }
 
   showCameras(on: boolean) {

@@ -107,7 +107,10 @@ async function start() {
     const shown: EventKind[] = ["crash", "incident", "closure", "congestion", "disabled", "construction", "weather", "event"];
     const items = shown.map((k) => `<li><img src="${markerUrl(KINDS[k])}" alt="">${KINDS[k].label}</li>`);
     items.push(`<li><span class="dot"></span>Camera</li>`);
-    if (tm.hasFlow) items.push(`<li><span class="ramp"></span>Speeds, free to stopped <span class="note">TomTom</span></li>`);
+    if (tm.hasFlow) {
+      items.push(`<li><span class="ramp"></span>Speeds, free to stopped <span class="note">TomTom</span></li>`);
+      items.push(`<li><span class="shut"></span>Closed <span class="note">TomTom</span></li>`);
+    }
     items.push(`<li><span class="band"></span>Your route</li>`);
     $("legendList").innerHTML = items.join("");
   }
