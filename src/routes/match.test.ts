@@ -4,7 +4,7 @@ import type { Camera, TrafficEvent } from "../shared/types";
 import { byRoad, camerasAlong, crossesRoute, eventsAlong, onCrossingRoad, type CameraAlong, type EventAlong } from "./match";
 
 // About 111 m per 0.001° of latitude; at 28°N, about 98 m per 0.001° of longitude.
-const cam = (id: number, lon: number, lat: number, road: string): Camera => ({ id, lon, lat, road, dir: "E", location: `${road} ${id}`, images: [id] });
+const cam = (id: number, lon: number, lat: number, road: string): Camera => ({ id, lon, lat, road, dir: "E", location: `${road} ${id}`, county: "", images: [id], noFeed: [] });
 
 // A route due east along 28°N, from -82 to -81.
 const route: LngLat[] = [

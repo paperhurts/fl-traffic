@@ -1,8 +1,9 @@
 // "My routes": the drives the viewer saved, each with its time in today's
 // traffic, what FL511 and TomTom report along it, and its cameras in order.
 
-import { esc, minute } from "../cards";
+import { esc, minute, stillTag } from "../cards";
 import { cameraImage, ROUTE_EVERY_MS } from "../config";
+import { hasFeed } from "../data";
 import { ago, cameraName, clock, DIRECTION_WORDS, duration, miles, withoutUpdated } from "../format";
 import { measure, type LngLat, type Measured } from "../geo";
 import { KINDS, markerUrl } from "../icons";
@@ -33,8 +34,10 @@ interface Draft {
 interface Opened {
   result: RouteResult;
   line: Measured;
-  /** The cameras listed, without any the viewer left off. */
+  /** The cameras listed: live ones the viewer hasn't left off. */
   cams: CameraAlong[];
+  /** How many more FL511 has no live feed from. */
+  dark: number;
   /** Every camera beside the route, which tells which roads it follows. */
   all: CameraAlong[];
 }
@@ -363,7 +366,9 @@ export class RoutePanel {
     if (!result) return null;
     const hidden = new Set(this.routeById(v.id)?.hidden ?? []);
     const { line, all } = this.match(result);
-    return { result, line, all, cams: all.filter((a) => !hidden.has(a.item.id)) };
+    const mine = all.filter((a) => !hidden.has(a.item.id));
+    const cams = mine.filter((a) => hasFeed(a.item));
+    return { result, line, all, cams, dark: mine.length - cams.length };
   }
 
   private match(result: RouteResult) {
@@ -508,7 +513,7 @@ export class RoutePanel {
     const cams = o.cams
       .map(
         (a) => `<li><button type="button" class="cam" data-act="cam" data-id="${a.item.id}">
-          <img class="thumb" data-image="${a.item.images[0]}" alt="Latest still from ${esc(cameraName(a.item.location))}" decoding="async">
+          ${stillTag(a.item.images[0], `Latest still from ${cameraName(a.item.location)}`, "thumb", false, true)}
           <span><b>${milepost(a.along)}</b> ${esc(cameraName(a.item.location))}</span></button>
           <button type="button" class="link hide" data-act="hide" data-id="${a.item.id}" aria-label="Leave this camera off the route">Not on my way</button></li>`,
       )
@@ -524,8 +529,9 @@ export class RoutePanel {
       ${
         cams
           ? `<ol class="cams">${cams}</ol>`
-          : `<p class="hint">FL511 has no cameras along this drive.</p>`
+          : `<p class="hint">${o.dark ? "FL511 has no live feed from the cameras along this drive right now." : "FL511 has no cameras along this drive."}</p>`
       }
+      ${cams && o.dark ? `<p class="hint">${o.dark} more on the way ${o.dark === 1 ? "has" : "have"} no live feed right now.</p>` : ""}
       ${hiddenCount ? `<p class="hint">${hiddenCount} camera${hiddenCount === 1 ? "" : "s"} left off. <button type="button" class="link" data-act="unhide">Put them back</button></p>` : ""}
       ${bottom}`;
   }

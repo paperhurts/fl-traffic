@@ -9,6 +9,7 @@ import {
   Map as MapLibre,
   NavigationControl,
   setWorkerUrl,
+  type ExpressionSpecification,
   type MapGeoJSONFeature,
   type PointLike,
   type StyleSpecification,
@@ -19,6 +20,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 // MapLibre finds its worker next to its own module, which Vite moves; hand it one Vite builds.
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import { BASEMAP, FLORIDA } from "./config";
+import { hasFeed } from "./data";
 import type { LngLat } from "./geo";
 import { KINDS, markerImage } from "./icons";
 import type { JamKind } from "./routes/tomtom";
@@ -239,16 +241,20 @@ export class TrafficMap {
     this.addFlow();
 
     map.addSource("cams", { type: "geojson", data: this.cameras, attribution: FL511_CREDIT });
+    // A camera FL511 has no live feed from is a ring: by the daily list, or by its still once seen.
+    const off: ExpressionSpecification = ["boolean", ["coalesce", ["feature-state", "off"], ["get", "off"]], false];
+    const cam = cssVar("--cam");
+    const halo = cssVar("--halo");
     map.addLayer({
       id: "cams",
       type: "circle",
       source: "cams",
       layout: { visibility: this.showCams ? "visible" : "none" },
       paint: {
-        "circle-color": cssVar("--cam"),
+        "circle-color": ["case", off, halo, cam],
         "circle-radius": ["interpolate", ["linear"], ["zoom"], 5, 1.4, 8, 2.4, 11, 4, 15, 6.5],
-        "circle-stroke-color": cssVar("--halo"),
-        "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 5, 0.3, 10, 1.2],
+        "circle-stroke-color": ["case", off, cam, halo],
+        "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 5, ["case", off, 0.6, 0.3], 10, ["case", off, 1.6, 1.2]],
       },
     });
     map.addLayer({
@@ -300,9 +306,16 @@ export class TrafficMap {
   setCameras(cams: Camera[]) {
     this.cameras = {
       type: "FeatureCollection",
-      features: cams.map((c) => ({ type: "Feature", id: c.id, properties: {}, geometry: { type: "Point", coordinates: [c.lon, c.lat] } })),
+      features: cams.map((c) => ({ type: "Feature", id: c.id, properties: { off: !hasFeed(c) }, geometry: { type: "Point", coordinates: [c.lon, c.lat] } })),
     };
     this.setData("cams", this.cameras);
+  }
+
+  /** A camera's still showed it live, or dark, unlike the daily list said. */
+  setCameraFeed(id: number, live: boolean) {
+    const f = this.cameras.features.find((x) => x.id === id);
+    if (f) f.properties = { off: !live };
+    if (this.map.getSource("cams")) this.map.setFeatureState({ source: "cams", id }, { off: !live });
   }
 
   setEvents(events: TrafficEvent[]) {

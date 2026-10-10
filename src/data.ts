@@ -4,16 +4,25 @@ import { RELAY, TOMTOM_KEY_OVERRIDE } from "./config";
 import type { Camera, CameraFile, EventsResponse, RelayConfig } from "./shared/types";
 
 export function decodeCameras(file: CameraFile): Camera[] {
-  return file.cameras.map((c) => ({
-    id: c[0],
-    lon: c[1],
-    lat: c[2],
-    road: file.roads[c[3]],
-    dir: c[4],
-    location: c[5],
-    images: c.length === 7 ? c[6] : [c[0]],
-  }));
+  const off = new Set(file.noFeed);
+  return file.cameras.map((c) => {
+    const images = c.length === 8 ? c[7] : [c[0]];
+    return {
+      id: c[0],
+      lon: c[1],
+      lat: c[2],
+      road: file.roads[c[3]],
+      dir: c[4],
+      location: c[5],
+      county: file.counties[c[6]],
+      images,
+      noFeed: images.filter((id) => off.has(id)),
+    };
+  });
 }
+
+/** Whether any of a camera's images has a live feed. */
+export const hasFeed = (c: Camera) => c.images.some((id) => !c.noFeed.includes(id));
 
 export async function loadCameras(): Promise<{ cameras: Camera[]; generated: string }> {
   const res = await fetch(new URL("./data/cameras.json", document.baseURI));

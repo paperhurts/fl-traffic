@@ -31,24 +31,41 @@ describe("cameras.json", () => {
     }
   });
 
-  it("names a road, a direction, and its images", () => {
+  it("names a road, a direction, a county, and its images", () => {
     for (const c of cams.cameras) {
       expect(c[3]).toBeGreaterThanOrEqual(0);
       expect(c[3]).toBeLessThan(cams.roads.length);
       expect(["N", "S", "E", "W", "B", ""]).toContain(c[4]);
       expect(typeof c[5]).toBe("string");
-      if (c.length === 7) {
-        expect(c[6].length).toBeGreaterThan(0);
-        for (const im of c[6]) expect(Number.isInteger(im) && im > 0).toBe(true);
+      expect(c[6]).toBeGreaterThanOrEqual(0);
+      expect(c[6]).toBeLessThan(cams.counties.length);
+      if (c.length === 8) {
+        expect(c[7].length).toBeGreaterThan(0);
+        for (const im of c[7]) expect(Number.isInteger(im) && im > 0).toBe(true);
       } else {
-        expect(c.length).toBe(6);
+        expect(c.length).toBe(7);
       }
     }
   });
 
-  it("lists each road once, and only roads a camera is on", () => {
+  it("lists each road and county once, and only ones a camera is in", () => {
     expect(new Set(cams.roads).size).toBe(cams.roads.length);
-    const used = new Set(cams.cameras.map((c) => c[3]));
-    expect(used.size).toBe(cams.roads.length);
+    expect(new Set(cams.cameras.map((c) => c[3])).size).toBe(cams.roads.length);
+    expect(new Set(cams.counties).size).toBe(cams.counties.length);
+    expect(new Set(cams.cameras.map((c) => c[6])).size).toBe(cams.counties.length);
+  });
+
+  it("names a county for nearly every camera", () => {
+    const none = cams.counties.indexOf("");
+    const without = none < 0 ? 0 : cams.cameras.filter((c) => c[6] === none).length;
+    expect(without / cams.cameras.length).toBeLessThan(0.05);
+  });
+
+  it("marks only its own images as having no live feed, and leaves most live", () => {
+    const images = new Set(cams.cameras.flatMap((c) => (c.length === 8 ? c[7] : [c[0]])));
+    expect(new Set(cams.noFeed).size).toBe(cams.noFeed.length);
+    for (const id of cams.noFeed) expect(images.has(id), `image ${id}`).toBe(true);
+    // About a fifth are dark on a typical day; most of them dark would mean FL511 changed its list.
+    expect(cams.noFeed.length / images.size).toBeLessThan(0.5);
   });
 });

@@ -12,8 +12,16 @@ export const esc = (s: string) =>
 /** FL511 caches each still for a minute; asking once a minute gets each new one. */
 export const minute = () => Math.floor(Date.now() / 60_000);
 
-export function stillTag(imageId: number, alt: string, cls = "still"): string {
-  return `<img class="${cls}" data-image="${imageId}" src="${cameraImage(imageId, minute())}" alt="${esc(alt)}" decoding="async">`;
+/** For a camera with no live feed, FL511 serves a "No live camera feed at this time" picture in
+ *  place of its still: always this size, which no camera's stills are. */
+export const isNoFeedPicture = (img: HTMLImageElement) => img.naturalWidth === 540 && img.naturalHeight === 330;
+
+/** A camera's still, and words in its place while FL511 has no live feed from it. The page flips
+ *  `data-feed` as each still loads (main.ts), so a feed that comes back shows. `src` waits for the
+ *  route panel to set it when `lazy`. */
+export function stillTag(imageId: number, alt: string, cls = "still", off = false, lazy = false): string {
+  const src = lazy ? "" : ` src="${cameraImage(imageId, minute())}"`;
+  return `<span class="feed" data-feed="${off ? "off" : "on"}"><img class="${cls}" data-image="${imageId}"${src} alt="${esc(alt)}" decoding="async"><span class="nofeed">No live feed right now</span></span>`;
 }
 
 /** Points every still inside `root` at this minute's image. */
@@ -67,10 +75,11 @@ export class Card {
   camera(c: Camera) {
     const name = cameraName(c.location);
     const dir = DIRECTION_WORDS[c.dir];
+    const where = [esc(c.road), dir, c.county && `${esc(c.county)} County`].filter(Boolean).join(" · ");
     this.open(`
       <h2>${esc(name)}</h2>
-      <div class="kind">Camera · ${esc(c.road)}${dir ? ` · ${dir}` : ""}</div>
-      <div class="stills">${c.images.map((id) => stillTag(id, `Latest still from the camera at ${name}`)).join("")}</div>
+      <div class="kind">Camera · ${where}</div>
+      <div class="stills">${c.images.map((id) => stillTag(id, `Latest still from the camera at ${name}`, "still", c.noFeed.includes(id))).join("")}</div>
       <p class="when">FL511's latest still, reloaded every minute.</p>
       <p class="links"><a href="${cameraPage(c.id)}" target="_blank" rel="noopener">Watch it live on FL511 ↗</a></p>`);
   }

@@ -7,9 +7,11 @@ import type { Direction } from "../../supabase/functions/fl511/parse.ts";
 
 export type { Direction, EventKind, EventsResponse, RelayConfig, TrafficEvent } from "../../supabase/functions/fl511/parse.ts";
 
-/** One camera site: [id, lon, lat, road index, direction, location, image ids].
+/** One camera site: [id, lon, lat, road index, direction, location, county index, image ids].
  *  The image ids are left out when the site has one image with its own id. */
-export type CameraRow = [number, number, number, number, Direction, string] | [number, number, number, number, Direction, string, number[]];
+export type CameraRow =
+  | [number, number, number, number, Direction, string, number]
+  | [number, number, number, number, Direction, string, number, number[]];
 
 /** public/data/cameras.json: every FL511 camera, fetched at build time. */
 export interface CameraFile {
@@ -17,7 +19,12 @@ export interface CameraFile {
   generated: string;
   /** Road names as FL511 gives them ("I-4", "SR-528", "US-192 / Vine St / Bronson Hwy"). */
   roads: string[];
+  /** County names as FL511 gives them ("Hillsborough"), and "" for cameras it gives none. */
+  counties: string[];
   cameras: CameraRow[];
+  /** Images FL511 listed with no video feed when the list was fetched. Their stills are FL511's
+   *  "No live camera feed at this time" picture. */
+  noFeed: number[];
 }
 
 export interface Camera {
@@ -27,5 +34,8 @@ export interface Camera {
   road: string;
   dir: Direction;
   location: string;
+  county: string;
   images: number[];
+  /** Its images with no live feed: from the daily list, then from each still as it loads. */
+  noFeed: number[];
 }
