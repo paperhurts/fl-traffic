@@ -1,9 +1,10 @@
-// The map: OpenFreeMap's basemap tinted to the page's colors, TomTom's speeds,
-// the open route, FL511's cameras, the water cams, and FL511's events, in that
-// order from the bottom. A color-scheme change reloads the basemap, and every
-// layer here is added again from what the page last gave it.
+// The map: OpenFreeMap's basemap tinted to the page's colors, the radar's rain,
+// TomTom's speeds, the open route, FL511's cameras, the water cams, and FL511's
+// events, in that order from the bottom. A color-scheme change reloads the
+// basemap, and every layer here is added again from what the page last gave it.
 
 import {
+  addProtocol,
   GeoJSONSource,
   GeolocateControl,
   Map as MapLibre,
@@ -12,6 +13,7 @@ import {
   type ExpressionSpecification,
   type MapGeoJSONFeature,
   type PointLike,
+  type RasterTileSource,
   type StyleSpecification,
   type VectorTileSource,
 } from "maplibre-gl";
@@ -23,6 +25,7 @@ import { BASEMAP, FLORIDA } from "./config";
 import { hasFeed } from "./data";
 import type { LngLat } from "./geo";
 import { KINDS, markerImage, waterCamImage } from "./icons";
+import { loadRadarTile, parseColor, radarTiles, RAIN_STOPS, type Rgba } from "./radar";
 import type { JamKind } from "./routes/tomtom";
 import type { Camera, EventKind, TrafficEvent, Webcam } from "./shared/types";
 import { flowUrl, SPEED_LAYERS, speedLayers, type Bands, type SpeedColors } from "./speeds";
@@ -38,6 +41,16 @@ export interface RouteDrawing {
 }
 
 setWorkerUrl(workerUrl);
+
+/** The rain's colors in the current scheme, read once per scheme for the tiles that follow. */
+let rain: { dark: boolean; colors: Rgba[] } | null = null;
+addProtocol("radar", (params, abort) => {
+  const dark = isDark();
+  if (rain?.dark !== dark) rain = { dark, colors: RAIN_STOPS.map((d) => parseColor(cssVar(`--rain-${d}`))) };
+  return loadRadarTile(params.url, abort, rain.colors);
+});
+
+const RADAR_CREDIT = 'Radar <a href="https://mesonet.agron.iastate.edu/" target="_blank" rel="noopener">NWS via Iowa Environmental Mesonet</a>';
 
 const FL511_CREDIT = 'Cameras and events <a href="https://fl511.com/" target="_blank" rel="noopener">FL511</a> (FDOT)';
 
@@ -135,6 +148,9 @@ export class TrafficMap {
   private showCams = true;
   private showWater = true;
   private showWork = false;
+  /** The radar mosaic's time ("202610100950"); null for IEM's newest of unknown time, undefined until asked for. */
+  private radarStamp: string | null | undefined = undefined;
+  private showRain = false;
   private onFlowError: () => void = () => {};
   /** Tiles TomTom refused since the last reload; a few in a row mean the key or its allowance, not a blip. */
   private flowErrors = 0;
@@ -246,6 +262,7 @@ export class TrafficMap {
       },
       below,
     );
+    this.addRadar();
     this.addFlow();
 
     map.addSource("cams", { type: "geojson", data: this.cameras, attribution: FL511_CREDIT });
@@ -400,6 +417,28 @@ export class TrafficMap {
   select(at: LngLat | null) {
     this.selected = at;
     this.setData("sel", this.selection());
+  }
+
+  /** The radar's rain goes over the basemap's roads and under everything this page draws. */
+  private addRadar() {
+    if (this.radarStamp === undefined || !this.showRain || this.map.getSource("radar") || !this.map.getLayer("route-halo")) return;
+    this.map.addSource("radar", { type: "raster", tiles: [radarTiles(this.radarStamp)], tileSize: 256, maxzoom: 10, attribution: RADAR_CREDIT });
+    this.map.addLayer({ id: "radar", type: "raster", source: "radar", paint: { "raster-fade-duration": 0 } }, "route-halo");
+  }
+
+  /** The radar mosaic to show: a new time swaps its tiles, and the old ones stay up until the new ones load. */
+  setRadar(stamp: string | null) {
+    if (stamp === this.radarStamp) return;
+    this.radarStamp = stamp;
+    const source = this.map.getSource("radar") as RasterTileSource | undefined;
+    if (source) source.setTiles([radarTiles(stamp)]);
+    else this.addRadar();
+  }
+
+  showRadar(on: boolean) {
+    this.showRain = on;
+    if (this.map.getLayer("radar")) this.map.setLayoutProperty("radar", "visibility", on ? "visible" : "none");
+    else this.addRadar();
   }
 
   /** TomTom's speeds go over the route's line and under its slow stretches and the labels. */
