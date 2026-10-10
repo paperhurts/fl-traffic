@@ -15,6 +15,7 @@
     "relay": "node scripts/dev-relay.ts"
   },
   "devDependencies": {
+    "@maplibre/maplibre-gl-style-spec": "^26.4.4",
     "@types/geojson": "^7946.0.16",
     "@types/node": "^26.6.4",
     "typescript": "^7.0.2",
