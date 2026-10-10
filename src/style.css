@@ -53,6 +53,7 @@ body.picking #map canvas { cursor: crosshair }
 #legend .dot { width: 9px; height: 9px; margin: 0 4.5px; border-radius: 50%; background: var(--cam); box-shadow: 0 0 0 1.5px var(--halo) }
 #legend .dot.off { background: var(--halo); box-shadow: inset 0 0 0 1.6px var(--cam) }
 #legend .band { width: 18px; height: 6px; border-radius: 3px; background: var(--route); opacity: .7 }
+#legend .band.other { height: 3px; border-radius: 0; opacity: .8; background: repeating-linear-gradient(90deg, var(--route) 0 5px, transparent 5px 8px) }
 /* TomTom's speed bands and closures, as the map draws them (src/speeds.ts) */
 #legend .ramp { width: 54px; height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--flow-free) 25%, var(--flow-slow) 25% 50%, var(--flow-heavy) 50% 75%, var(--flow-stopped) 75%) }
 #legend .shut { width: 18px; height: 6px; border-radius: 3px; background: repeating-linear-gradient(90deg, var(--flow-closed) 0 4px, var(--flow-dash) 4px 8px) }
@@ -134,6 +135,27 @@ body.picking #map canvas { cursor: crosshair }
 .rname { font: 600 1rem var(--sans) }
 .rsum { color: var(--muted); font-size: .88rem }
 .rsum b { color: var(--ink) }
+.rway { display: block }
+#panel button.primary.quiet { color: var(--accent); background: none; box-shadow: inset 0 0 0 1.5px var(--accent) }
+/* The ways to make a drive: the picked one is drawn solid on the map, the others dashed */
+.ways { display: grid; gap: 6px }
+.way {
+  width: 100%; display: flex; gap: 10px; align-items: flex-start; text-align: left; padding: 8px 10px; cursor: pointer;
+  background: none; color: var(--ink); border: 1px solid var(--line); border-radius: 10px; font: inherit;
+}
+.way.on { background: var(--card); border-color: var(--route) }
+.way b { font: 600 .98rem var(--sans) }
+.way i { font-style: normal; font-size: .8rem; font-weight: 600; color: var(--accent) }
+.way small { display: block; color: var(--muted); font-size: .84rem }
+.way .stroke { flex: 0 0 22px; margin-top: .62em; border-top: 3px dashed var(--route); opacity: .8 }
+.way.on .stroke { border-top-style: solid; opacity: 1 }
+/* Sending routes, and routes a link offers */
+.picks { list-style: none; margin: .6em 0; padding: 0; display: grid; gap: 6px }
+.picks label { display: flex; gap: 10px; align-items: flex-start }
+.picks input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--accent); flex: 0 0 auto }
+.picks small { display: block; color: var(--muted); font-size: .84rem }
+#panel .ok { color: var(--accent); font-weight: 600 }
+.linkbox { width: 100%; font: .82rem var(--sans); color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px }
 .warn { color: var(--crash); font-weight: 600 }
 .sum { margin: .7em 0 .2em }
 .sum .big { font: 600 2rem/1.05 var(--sans) }
