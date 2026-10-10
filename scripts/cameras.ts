@@ -20,8 +20,10 @@ export interface CameraListRow {
   roadway?: string | null;
   direction?: string | null;
   location?: string | null;
+  county?: string | null;
   latLng?: { geography?: { wellKnownText?: string | null } | null } | null;
-  images?: { id: number; disabled?: boolean | null; blocked?: boolean | null }[] | null;
+  /** An image with no videoUrl has no live feed: its still is FL511's "No live camera feed" picture. */
+  images?: { id: number; disabled?: boolean | null; blocked?: boolean | null; videoUrl?: string | null }[] | null;
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -50,26 +52,55 @@ export function wktPoint(wkt: string | null | undefined): [number, number] | nul
 
 const round = (x: number) => Math.round(x * 1e5) / 1e5;
 
-/** Packs list rows into the camera file, dropping images FL511 marks disabled or blocked and sites left with none. */
+/** The sorted names in `values`, and each one's index. */
+function names(values: Iterable<string>): [string[], Map<string, number>] {
+  const list = [...new Set(values)].sort((a, b) => a.localeCompare(b));
+  return [list, new Map(list.map((v, i) => [v, i]))];
+}
+
+/** Packs list rows into the camera file, dropping images FL511 marks disabled or blocked and sites
+ *  left with none, and noting the images FL511 has no live feed from. */
 export function cameraFile(rows: CameraListRow[], icons: Map<number, [number, number]>, generated: string): CameraFile {
   const byId = new Map<number, CameraListRow>();
   for (const r of rows) byId.set(Number(r.id), r);
-  const roads = [...new Set([...byId.values()].map((r) => plainText(r.roadway)))].sort((a, b) => a.localeCompare(b));
-  const roadIndex = new Map(roads.map((r, i) => [r, i]));
+  const [roads, roadIndex] = names([...byId.values()].map((r) => plainText(r.roadway)));
+  const [counties, countyIndex] = names([...byId.values()].map((r) => plainText(r.county)));
   const cameras: CameraRow[] = [];
+  const noFeed: number[] = [];
   for (const [id, r] of [...byId].sort((a, b) => a[0] - b[0])) {
     const at = icons.get(id) ?? wktPoint(r.latLng?.geography?.wellKnownText);
     if (!at) continue;
-    const images = (r.images ?? []).filter((im) => !im.disabled && !im.blocked).map((im) => Number(im.id));
-    if (!images.length) continue;
-    const row: CameraRow = [id, round(at[0]), round(at[1]), roadIndex.get(plainText(r.roadway))!, direction(r.direction), plainText(r.location)];
+    const kept = (r.images ?? []).filter((im) => !im.disabled && !im.blocked);
+    if (!kept.length) continue;
+    const images = kept.map((im) => Number(im.id));
+    for (const im of kept) if (!im.videoUrl?.trim()) noFeed.push(Number(im.id));
+    const row: CameraRow = [
+      id,
+      round(at[0]),
+      round(at[1]),
+      roadIndex.get(plainText(r.roadway))!,
+      direction(r.direction),
+      plainText(r.location),
+      countyIndex.get(plainText(r.county))!,
+    ];
     cameras.push(images.length === 1 && images[0] === id ? row : [...row, images]);
   }
-  // Roads no kept camera uses would only bloat the file.
-  const used = [...new Set(cameras.map((c) => c[3]))].sort((a, b) => a - b);
-  const remap = new Map(used.map((old, i) => [old, i]));
-  for (const c of cameras) c[3] = remap.get(c[3])!;
-  return { generated, roads: used.map((i) => roads[i]), cameras };
+  // Roads and counties no kept camera uses would only bloat the file.
+  const usedRoads = [...new Set(cameras.map((c) => c[3]))].sort((a, b) => a - b);
+  const usedCounties = [...new Set(cameras.map((c) => c[6]))].sort((a, b) => a - b);
+  const roadRemap = new Map(usedRoads.map((old, i) => [old, i]));
+  const countyRemap = new Map(usedCounties.map((old, i) => [old, i]));
+  for (const c of cameras) {
+    c[3] = roadRemap.get(c[3])!;
+    c[6] = countyRemap.get(c[6])!;
+  }
+  return {
+    generated,
+    roads: usedRoads.map((i) => roads[i]),
+    counties: usedCounties.map((i) => counties[i]),
+    cameras,
+    noFeed: noFeed.sort((a, b) => a - b),
+  };
 }
 
 async function main() {
@@ -102,7 +133,7 @@ async function main() {
   const file = cameraFile(rows, icons, new Date().toISOString());
   if (file.cameras.length < MIN_CAMERAS) throw new Error(`only ${file.cameras.length} cameras; keeping the old file`);
   writeFileSync(OUT, JSON.stringify(file).replace(/\],\[/g, "],\n[") + "\n");
-  console.log(`wrote ${file.cameras.length} cameras on ${file.roads.length} roads`);
+  console.log(`wrote ${file.cameras.length} cameras on ${file.roads.length} roads in ${file.counties.length} counties, ${file.noFeed.length} images with no live feed`);
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {

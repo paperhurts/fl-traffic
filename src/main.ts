@@ -1,7 +1,8 @@
 import "./style.css";
-import { Card } from "./cards";
+import { Card, isNoFeedPicture } from "./cards";
 import { EVENTS_EVERY_MS, SPEEDS_EVERY_MS, STILLS_EVERY_MS } from "./config";
-import { fetchConfig, fetchEvents, loadCameras } from "./data";
+import { fetchConfig, fetchEvents, hasFeed, loadCameras } from "./data";
+import { cameraLabels, findCamera } from "./find";
 import { clock } from "./format";
 import type { LngLat } from "./geo";
 import { KINDS, markerUrl } from "./icons";
@@ -23,6 +24,7 @@ async function start() {
   const view = saved && saved.center?.every(Number.isFinite) && Number.isFinite(saved.zoom) ? saved : null;
   const [tm, cams, config] = await Promise.all([TrafficMap.create($("map"), view), loadCameras(), fetchConfig()]);
   const camById = new Map(cams.cameras.map((c) => [c.id, c]));
+  const camByImage = new Map(cams.cameras.flatMap((c) => c.images.map((im) => [im, c] as const)));
   let events: TrafficEvent[] = [];
   let evById = new Map<number, TrafficEvent>();
   let last: EventsResponse | null = null;
@@ -55,10 +57,29 @@ async function start() {
     const e = evById.get(id);
     if (!e) return;
     shownEvent = id;
-    card.event(e, nearbyCameras(cams.cameras, [e.lon, e.lat], e.road));
+    card.event(e, nearbyCameras(cams.cameras.filter(hasFeed), [e.lon, e.lat], e.road));
     tm.select([e.lon, e.lat]);
     if (bringIntoView) tm.show([e.lon, e.lat]);
   }
+
+  // Each still that loads says whether FL511 has a live feed from its camera now, which the
+  // daily list can't: show it or the words in its place, and ring the camera on the map or not.
+  document.addEventListener(
+    "load",
+    (e) => {
+      const img = e.target;
+      if (!(img instanceof HTMLImageElement) || !img.dataset.image) return;
+      const live = !isNoFeedPicture(img);
+      img.closest(".feed")?.setAttribute("data-feed", live ? "on" : "off");
+      const id = Number(img.dataset.image);
+      const c = camByImage.get(id);
+      if (!c || c.noFeed.includes(id) === !live) return;
+      const was = hasFeed(c);
+      c.noFeed = live ? c.noFeed.filter((x) => x !== id) : [...c.noFeed, id];
+      if (hasFeed(c) !== was) tm.setCameraFeed(c.id, !was);
+    },
+    true,
+  );
 
   card.onClose = () => {
     shownEvent = null;
@@ -106,7 +127,7 @@ async function start() {
   function renderLegend() {
     const shown: EventKind[] = ["crash", "incident", "closure", "congestion", "disabled", "construction", "weather", "event"];
     const items = shown.map((k) => `<li><img src="${markerUrl(KINDS[k])}" alt="">${KINDS[k].label}</li>`);
-    items.push(`<li><span class="dot"></span>Camera</li>`);
+    items.push(`<li><span class="dot"></span>Camera</li>`, `<li><span class="dot off"></span>Camera, no live feed now</li>`);
     if (tm.hasFlow) {
       items.push(`<li><span class="ramp"></span>Speeds, free to stopped <span class="note">TomTom</span></li>`);
       items.push(`<li><span class="shut"></span>Closed <span class="note">TomTom</span></li>`);
@@ -134,6 +155,42 @@ async function start() {
     tm.showConstruction(pressed("bWork"));
   });
   $("bAll").addEventListener("click", () => tm.fitFlorida());
+
+  // Finding a camera: the suggestions are every camera's label; anything else typed is matched word by word.
+  const labels = cameraLabels(cams.cameras);
+  const list = $("camList");
+  for (const label of [...labels.values()].sort((a, b) => a.localeCompare(b))) {
+    const o = document.createElement("option");
+    o.value = label;
+    list.appendChild(o);
+  }
+  const find = $("find") as HTMLInputElement;
+  /** What the box last found, so the change that follows a picked suggestion doesn't find it again. */
+  let found = "";
+  const go = (exactOnly: boolean) => {
+    const q = find.value.trim();
+    const c = findCamera(q, cams.cameras, labels);
+    if (!c || (exactOnly && labels.get(c.id) !== q)) {
+      if (!exactOnly && q) {
+        find.setCustomValidity("No camera's name, road, or county has all of those words.");
+        find.reportValidity();
+      }
+      return;
+    }
+    found = q;
+    openCamera(c.id);
+    tm.show([c.lon, c.lat], 14);
+    find.blur();
+  };
+  // Picking a suggestion fills in its whole label; Enter takes whatever was typed.
+  find.addEventListener("input", () => {
+    find.setCustomValidity("");
+    found = "";
+    go(true);
+  });
+  find.addEventListener("change", () => {
+    if (find.value.trim() !== found) go(false);
+  });
   if (config.tomtomKey) {
     $("bSpeeds").hidden = false;
     tm.setFlowKey(config.tomtomKey, () => {
@@ -180,7 +237,7 @@ async function start() {
   await loadEvents();
   if (panel.hasRoutes) panel.resume();
   // For poking at the page from the console on the dev server.
-  if (import.meta.env.DEV) Object.assign(window, { traffic: { tm, panel, card, events: () => events, cameras: cams.cameras } });
+  if (import.meta.env.DEV) Object.assign(window, { traffic: { tm, panel, card, events: () => events, cameras: cams.cameras, labels } });
 }
 
 start().catch((e) => {

@@ -28,6 +28,8 @@ body.picking #map canvas { cursor: crosshair }
   border: 1px solid var(--line); border-radius: 999px; padding: 7px 12px; cursor: pointer;
 }
 .tools button[aria-pressed="true"] { background: var(--accent); color: var(--bg); border-color: var(--accent) }
+.tools input { flex: 0 0 11.5rem; min-width: 0; font: 500 .84rem var(--sans); color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 7px 12px }
+.tools input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
 .tools button:focus-visible, .chip:focus-visible, #card button:focus-visible, #panel button:focus-visible, #panel input:focus-visible {
   outline: 2px solid var(--accent); outline-offset: 2px;
 }
@@ -49,6 +51,7 @@ body.picking #map canvas { cursor: crosshair }
 #legend li { display: flex; align-items: center; gap: 7px }
 #legend img { width: 18px; height: 18px; flex: 0 0 auto }
 #legend .dot { width: 9px; height: 9px; margin: 0 4.5px; border-radius: 50%; background: var(--cam); box-shadow: 0 0 0 1.5px var(--halo) }
+#legend .dot.off { background: var(--halo); box-shadow: inset 0 0 0 1.6px var(--cam) }
 #legend .band { width: 18px; height: 6px; border-radius: 3px; background: var(--route); opacity: .7 }
 /* TomTom's speed bands and closures, as the map draws them (src/speeds.ts) */
 #legend .ramp { width: 54px; height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--flow-free) 25%, var(--flow-slow) 25% 50%, var(--flow-heavy) 50% 75%, var(--flow-stopped) 75%) }
@@ -79,6 +82,13 @@ body.picking #map canvas { cursor: crosshair }
 .thumbs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px }
 .thumbs button { flex: 0 0 132px; display: grid; gap: 3px; background: none; border: 0; padding: 0; color: var(--ink); font: 500 .74rem/1.2 var(--sans); text-align: left; cursor: pointer }
 .thumb { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: var(--line); border-radius: 6px; display: block }
+/* A still, or words in its place while FL511 has no live feed from the camera (stillTag in cards.ts). */
+.feed { display: block }
+.feed .nofeed { display: none; place-items: center; text-align: center; background: var(--line); color: var(--muted); font: 600 .78rem/1.25 var(--sans); padding: 8px; border-radius: 6px; aspect-ratio: 4 / 3 }
+.stills .feed .nofeed { aspect-ratio: auto; min-height: 120px; border-radius: 8px; font-size: .9rem }
+.feed[data-feed="off"] img { display: none }
+.feed[data-feed="off"] .nofeed { display: grid }
+#card .stills:not(:has(.feed[data-feed="on"])) + .when { display: none }
 
 /* My routes */
 #panel {

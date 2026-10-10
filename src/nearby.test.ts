@@ -17,7 +17,7 @@ describe("sameRoad", () => {
 });
 
 describe("nearbyCameras", () => {
-  const cam = (id: number, lon: number, road: string): Camera => ({ id, lon, lat: 28.5, road, dir: "E", location: "", images: [id] });
+  const cam = (id: number, lon: number, road: string): Camera => ({ id, lon, lat: 28.5, road, dir: "E", location: "", county: "", images: [id], noFeed: [] });
   // About 98 m per 0.001° of longitude here.
   const cams = [cam(1, -81.001, "SR-408"), cam(2, -81.004, "I-4"), cam(3, -81.008, "I-4"), cam(4, -81.05, "I-4"), cam(5, -81.0005, "Colonial Dr")];
 
