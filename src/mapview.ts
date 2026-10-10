@@ -38,6 +38,8 @@ export interface RouteDrawing {
   line: LngLat[];
   /** Stretches TomTom says are slow, closed, or under roadwork. */
   jams: { line: LngLat[]; kind: JamKind }[];
+  /** The other ways to make the drive, dashed under it. */
+  others: LngLat[][];
 }
 
 setWorkerUrl(workerUrl);
@@ -224,6 +226,22 @@ export class TrafficMap {
 
     map.addSource("route", { type: "geojson", data: this.routeLine() });
     map.addSource("jams", { type: "geojson", data: this.routeJams() });
+    map.addSource("route-alts", { type: "geojson", data: this.routeOthers() });
+    map.addLayer(
+      {
+        id: "route-alt",
+        type: "line",
+        source: "route-alts",
+        layout: { "line-join": "round" },
+        paint: {
+          "line-color": cssVar("--route"),
+          "line-opacity": 0.8,
+          "line-width": ["interpolate", ["linear"], ["zoom"], 6, 2, 12, 3],
+          "line-dasharray": [2, 1.5],
+        },
+      },
+      below,
+    );
     map.addLayer(
       {
         id: "route-halo",
@@ -393,6 +411,14 @@ export class TrafficMap {
     return { type: "FeatureCollection", features: [{ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: this.route.line } }] };
   }
 
+  private routeOthers(): Features {
+    if (!this.route) return none();
+    return {
+      type: "FeatureCollection",
+      features: this.route.others.map((line) => ({ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: line } })),
+    };
+  }
+
   private routeJams(): Features {
     if (!this.route) return none();
     return {
@@ -405,6 +431,7 @@ export class TrafficMap {
     this.route = route;
     this.routeCams = cameraIds;
     this.setData("route", this.routeLine());
+    this.setData("route-alts", this.routeOthers());
     this.setData("jams", this.routeJams());
     if (this.map.getLayer("cams-route")) this.map.setFilter("cams-route", this.routeCamFilter());
   }
@@ -421,9 +448,9 @@ export class TrafficMap {
 
   /** The radar's rain goes over the basemap's roads and under everything this page draws. */
   private addRadar() {
-    if (this.radarStamp === undefined || !this.showRain || this.map.getSource("radar") || !this.map.getLayer("route-halo")) return;
+    if (this.radarStamp === undefined || !this.showRain || this.map.getSource("radar") || !this.map.getLayer("route-alt")) return;
     this.map.addSource("radar", { type: "raster", tiles: [radarTiles(this.radarStamp)], tileSize: 256, maxzoom: 10, attribution: RADAR_CREDIT });
-    this.map.addLayer({ id: "radar", type: "raster", source: "radar", paint: { "raster-fade-duration": 0 } }, "route-halo");
+    this.map.addLayer({ id: "radar", type: "raster", source: "radar", paint: { "raster-fade-duration": 0 } }, "route-alt");
   }
 
   /** The radar mosaic to show: a new time swaps its tiles, and the old ones stay up until the new ones load. */

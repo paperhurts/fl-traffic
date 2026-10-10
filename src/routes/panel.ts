@@ -1,5 +1,7 @@
-// "My routes": the drives the viewer saved, each with its time in today's
-// traffic, what FL511 and TomTom report along it, and its cameras in order.
+// "My routes": the drives the viewer saved, each with its ways in today's
+// traffic (TomTom's best and the others it offers, named by their roads), what
+// FL511 and TomTom report along the chosen way, and its cameras in order. Routes
+// can be sent to another phone in a link (share.ts).
 
 import { esc, minute, stillTag } from "../cards";
 import { cameraImage, ROUTE_EVERY_MS } from "../config";
@@ -10,9 +12,10 @@ import { KINDS, markerUrl } from "../icons";
 import type { TrafficMap } from "../mapview";
 import type { Camera, EventKind, TrafficEvent } from "../shared/types";
 import { byRoad, camerasAlong, eventsAlong, onCrossingRoad, type CameraAlong, type EventAlong } from "./match";
+import { alreadySaved, autoName, sharedRoute, shareLink, short, type SharedRoute } from "./share";
 import { loadRoutes, newId, recall, remember, saveRoutes, type Place, type SavedRoute } from "./store";
 import { jamKind, nameOf, route as fetchRoute, search, worthShowing, type Jam, type JamKind, type RouteResult } from "./tomtom";
-import { atMile, compareUsual, countWords, milepost } from "./words";
+import { atMile, compareUsual, countWords, milepost, usuallyFastest, wayNames } from "./words";
 
 export interface PanelDeps {
   map: TrafficMap;
@@ -23,7 +26,18 @@ export interface PanelDeps {
   openEvent: (id: number) => void;
 }
 
-type View = { name: "list" } | { name: "edit"; id: string | null } | { name: "detail"; id: string; back: boolean };
+type View =
+  | { name: "list" }
+  | { name: "edit"; id: string | null }
+  | { name: "detail"; id: string; back: boolean }
+  | { name: "share"; picked: Set<string>; copied: string | null }
+  | { name: "offer"; routes: SharedRoute[] };
+
+/** A way to make a drive, with what to call it. */
+interface Way {
+  way: RouteResult;
+  name: string;
+}
 
 interface Draft {
   from: Place | null;
@@ -51,20 +65,23 @@ const JAM_WORDS: Record<JamKind, string> = { closed: "Closed", heavy: "Stop and 
 /** Events worth listing even on the other side of the road. */
 const BOTH_WAYS = new Set<EventKind>(["crash", "closure", "incident", "weather"]);
 
-const short = (label: string) => label.split(",")[0].trim();
-
 const flip = (r: SavedRoute): SavedRoute => ({ ...r, from: r.to, to: r.from });
 
 export class RoutePanel {
   /** Set while the viewer is choosing a spot on the map for From or To. */
   picking: "from" | "to" | null = null;
   onOpenChange: (open: boolean) => void = () => {};
+  /** Routes offered by a link were turned down. */
+  onOfferDeclined: () => void = () => {};
 
   private el = document.getElementById("panel")!;
   private body = document.getElementById("panelBody")!;
   private routes = loadRoutes();
   private view: View = { name: "list" };
-  private results = new Map<string, RouteResult>();
+  /** TomTom's ways for each route (and each trip back), fastest first. */
+  private results = new Map<string, RouteResult[]>();
+  /** The way the viewer picked on each, by name; the fastest otherwise. */
+  private chosen = new Map<string, string>();
   private errors = new Map<string, string>();
   private pending = new Set<string>();
   private fitWhenReady: string | null = null;
@@ -101,6 +118,15 @@ export class RoutePanel {
       const f = e.target as HTMLFormElement;
       if (f.dataset.search) this.search(f.dataset.search as "from" | "to");
       else if (f.id === "routeForm") this.save();
+    });
+    this.body.addEventListener("change", (e) => {
+      const t = e.target as HTMLInputElement;
+      const v = this.view;
+      if (v.name !== "share" || !t.dataset.pick) return;
+      if (t.checked) v.picked.add(t.dataset.pick);
+      else v.picked.delete(t.dataset.pick);
+      const send = this.body.querySelector<HTMLButtonElement>("[data-act=send]");
+      if (send) send.disabled = !v.picked.size;
     });
     this.body.addEventListener("input", (e) => {
       const t = e.target as HTMLInputElement;
@@ -140,6 +166,14 @@ export class RoutePanel {
       this.view = { name: "detail", id: last, back: false };
       this.fitWhenReady = this.routeKey(last, false);
     }
+    this.open(true);
+  }
+
+  /** Routes a link offers: asks before saving them, or, from a bookmarked link whose routes
+   *  are all here, just shows them. */
+  offer(routes: SharedRoute[]) {
+    const saved = routes.every((o) => this.routes.some((r) => alreadySaved(r, o)));
+    this.go(saved ? { name: "list" } : { name: "offer", routes });
     this.open(true);
   }
 
@@ -183,23 +217,41 @@ export class RoutePanel {
           : [];
     for (const [r, k] of wanted) {
       const old = this.results.get(k);
-      if (this.pending.has(k) || (!force && old && Date.now() - old.at < ROUTE_EVERY_MS - 5000)) continue;
+      if (this.pending.has(k) || (!force && old && Date.now() - old[0].at < ROUTE_EVERY_MS - 5000)) continue;
       this.pending.add(k);
       fetchRoute(key, r.from, r.to)
-        .then((res) => {
-          this.results.set(k, res);
+        .then((ways) => {
+          this.results.set(k, ways);
           this.errors.delete(k);
           if (this.fitWhenReady === k) {
             this.fitWhenReady = null;
-            this.deps.map.fitLine(res.line);
+            this.fitWays(ways);
           }
         })
         .catch((e: Error) => this.errors.set(k, e.message))
         .finally(() => {
           this.pending.delete(k);
-          if (this.view.name !== "edit") this.render();
+          if (this.view.name === "list" || this.view.name === "detail") this.render();
         });
     }
+  }
+
+  /** Shows every way, so the ones around a jam are on screen too. */
+  private fitWays(ways: RouteResult[]) {
+    this.deps.map.fitLine(ways.flatMap((w) => w.line));
+  }
+
+  /** A route's ways, named and fastest first (a way named like a faster one follows the same
+   *  roads, so it's left out), the one picked, and the one that's usually fastest. */
+  private ways(k: string): { list: Way[]; pick: Way; usual: Way | null } | null {
+    const res = this.results.get(k);
+    if (!res) return null;
+    const names = wayNames(res);
+    const seen = new Set<string>();
+    const list = res.map((way, i) => ({ way, name: names[i] })).filter((w) => !seen.has(w.name) && !!seen.add(w.name));
+    const pick = list.find((w) => w.name === this.chosen.get(k)) ?? list[0];
+    const u = usuallyFastest(list.map((w) => w.way));
+    return { list, pick, usual: u === null ? null : list[u] };
   }
 
   private go(view: View) {
@@ -219,7 +271,7 @@ export class RoutePanel {
     const res = this.fitWhenReady ? this.results.get(this.fitWhenReady) : undefined;
     if (res) {
       this.fitWhenReady = null;
-      this.deps.map.fitLine(res.line);
+      this.fitWays(res);
     }
     this.render();
     this.refresh(false);
@@ -232,6 +284,7 @@ export class RoutePanel {
     const v = this.view;
     switch (act) {
       case "close":
+        if (v.name === "offer") this.onOfferDeclined();
         return this.open(false);
       case "new":
         return this.go({ name: "edit", id: null });
@@ -269,9 +322,29 @@ export class RoutePanel {
       }
       case "fit": {
         const res = v.name === "detail" ? this.results.get(this.routeKey(v.id, v.back)) : null;
-        if (res) this.deps.map.fitLine(res.line);
+        if (res) this.fitWays(res);
         return;
       }
+      case "way":
+        if (v.name === "detail") {
+          this.chosen.set(this.routeKey(v.id, v.back), t.dataset.name!);
+          this.render();
+        }
+        return;
+      case "share":
+        return this.go({ name: "share", picked: new Set(v.name === "detail" ? [v.id] : this.routes.map((r) => r.id)), copied: null });
+      case "send":
+        return void this.send();
+      case "accept":
+        if (v.name === "offer") {
+          for (const r of v.routes) if (!this.routes.some((s) => alreadySaved(s, r))) this.routes.push({ id: newId(), ...r });
+          saveRoutes(this.routes);
+          this.go({ name: "list" });
+        }
+        return;
+      case "decline":
+        this.onOfferDeclined();
+        return this.go({ name: "list" });
       case "refresh":
         return this.refresh(true);
       case "cam":
@@ -339,7 +412,7 @@ export class RoutePanel {
     const v = this.view;
     const { from, to } = this.draft;
     if (v.name !== "edit" || !from || !to || !from.lat || !to.lat) return;
-    const name = this.draft.name.trim() || `${short(from.label)} to ${short(to.label)}`;
+    const name = this.draft.name.trim() || autoName(from, to);
     let id = v.id;
     if (id) {
       const r = this.routeById(id)!;
@@ -358,11 +431,11 @@ export class RoutePanel {
     this.go({ name: "detail", id, back: false });
   }
 
-  /** The open route's line, cameras, and result, once TomTom has answered. */
+  /** The open route's picked way: its line, cameras, and result, once TomTom has answered. */
   private opened(): Opened | null {
     const v = this.view;
     if (v.name !== "detail") return null;
-    const result = this.results.get(this.routeKey(v.id, v.back));
+    const result = this.ways(this.routeKey(v.id, v.back))?.pick.way;
     if (!result) return null;
     const hidden = new Set(this.routeById(v.id)?.hidden ?? []);
     const { line, all } = this.match(result);
@@ -386,12 +459,20 @@ export class RoutePanel {
     return eventsAlong(line, this.deps.events()).map((e) => ({ ...e, crossing: onCrossingRoad(e, all) }));
   }
 
+  /** The crashes and closures ahead on a way, on its side of the road. */
+  private trouble(way: RouteResult): Alert[] {
+    const { line, all } = this.match(way);
+    return this.alerts(line, all).filter((e) => e.sameWay && !e.crossing && (e.item.kind === "crash" || e.item.kind === "closure" || e.item.full));
+  }
+
   private render() {
     this.io.disconnect();
     this.visible.clear();
     const v = this.view;
     let html: string;
-    if (!this.deps.key) html = this.noKey();
+    if (v.name === "offer") html = this.offerView(v.routes);
+    else if (v.name === "share") html = this.shareView(v.picked, v.copied);
+    else if (!this.deps.key) html = this.noKey();
     else if (v.name === "list") html = this.listView();
     else if (v.name === "edit") html = this.editView(v.id);
     else html = this.detailView(v.id, v.back);
@@ -407,12 +488,42 @@ export class RoutePanel {
 
   private drawOnMap() {
     const o = this.opened();
-    if (!o) {
+    const v = this.view;
+    if (!o || v.name !== "detail") {
       this.deps.map.setRoute(null);
       return;
     }
     const jams = o.result.jams.filter(worthShowing).map((j) => ({ line: o.result.line.slice(j.from, j.to + 1), kind: jamKind(j) }));
-    this.deps.map.setRoute({ line: o.result.line, jams }, o.cams.map((a) => a.item.id));
+    const others = (this.ways(this.routeKey(v.id, v.back))?.list ?? []).filter((w) => w.way !== o.result).map((w) => w.way.line);
+    this.deps.map.setRoute({ line: o.result.line, jams, others }, o.cams.map((a) => a.item.id));
+  }
+
+  /** Sends the picked routes' link: the phone's share sheet, or the clipboard. */
+  private async send() {
+    const v = this.view;
+    if (v.name !== "share") return;
+    const routes = this.routes.filter((r) => v.picked.has(r.id));
+    if (!routes.length) return;
+    const url = shareLink(routes, location.origin + location.pathname);
+    const names = routes.map((r) => sharedRoute(r).name);
+    const text = `${names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : names[0]}, on the Florida traffic map`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Florida traffic routes", text, url });
+        return;
+      } catch (e) {
+        if ((e as Error).name === "AbortError") return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      // Shown to copy by hand.
+    }
+    if (this.view === v) {
+      v.copied = url;
+      this.render();
+    }
   }
 
   private head(title: string, back: View["name"] | null) {
@@ -424,16 +535,25 @@ export class RoutePanel {
       <p>Routes need TomTom, which times each drive in today's traffic. Add a TomTom key to the relay's secrets as <code>TOMTOM_KEY</code> and they'll turn on.</p>`;
   }
 
-  /** "34 min, 6 min slower than usual" and what's on the way, for a route in the list. */
+  /** A way's time against its usual, and the crashes and closures on it. */
+  private wayWords(w: RouteResult): string {
+    const bad = this.trouble(w);
+    return [compareUsual(w), bad.length ? `<span class="warn">${countWords(bad)} on the way</span>` : ""].filter(Boolean).join(" · ");
+  }
+
+  /** "34 min via I-75 · 6 min slower than usual", for a route in the list, and the way that's
+   *  usually fastest under it when today it's at least five minutes slower. */
   private summary(r: SavedRoute): string {
     const k = r.id;
-    const res = this.results.get(k);
-    if (!res) return this.errors.has(k) ? `<span class="err">${esc(this.errors.get(k)!)}</span>` : "Checking traffic…";
-    const bits = [`<b>${duration(res.seconds)}</b>`, compareUsual(res)];
-    const { line, all } = this.match(res);
-    const bad = this.alerts(line, all).filter((e) => e.sameWay && !e.crossing && (e.item.kind === "crash" || e.item.kind === "closure" || e.item.full));
-    if (bad.length) bits.push(`<span class="warn">${countWords(bad)} on the way</span>`);
-    return bits.join(" · ");
+    const w = this.ways(k);
+    if (!w) return this.errors.has(k) ? `<span class="err">${esc(this.errors.get(k)!)}</span>` : "Checking traffic…";
+    const fast = w.list[0];
+    const lines = [`<b>${duration(fast.way.seconds)}</b> via ${esc(fast.name)} · ${this.wayWords(fast.way)}`];
+    const u = w.usual;
+    if (u && u !== fast && u.way.seconds - fast.way.seconds >= 300) {
+      lines.push(`${esc(u.name)}, usually fastest: <b>${duration(u.way.seconds)}</b> · ${this.wayWords(u.way)}`);
+    }
+    return lines.map((l) => `<span class="rway">${l}</span>`).join("");
   }
 
   private listView() {
@@ -448,9 +568,11 @@ export class RoutePanel {
       ${
         items
           ? `<ol class="routes">${items}</ol><p class="hint">Saved in this browser. Times are TomTom's, in today's traffic.</p>`
-          : `<p>Add the drives you make. Each one gets its time in today's traffic, any crash or closure FL511 reports on the way, and the cameras along it in the order you'd pass them.</p>`
+          : `<p>Add the drives you make. Each one gets its time in today's traffic, the other ways to go, any crash or closure FL511 reports on the way, and the cameras along it in the order you'd pass them.</p>`
       }
-      <button type="button" class="primary" data-act="new">Add a route</button>`;
+      <div class="row"><button type="button" class="primary" data-act="new">Add a route</button>${
+        items ? `<button type="button" class="primary quiet" data-act="share">Send to a phone</button>` : ""
+      }</div>`;
   }
 
   private placeField(which: "from" | "to") {
@@ -476,7 +598,7 @@ export class RoutePanel {
       ${this.placeField("to")}
       <form id="routeForm">
         <label class="name">Name <input id="rName" value="${esc(this.draft.name)}" placeholder="${
-          this.draft.from && this.draft.to ? esc(`${short(this.draft.from.label)} to ${short(this.draft.to.label)}`) : "Home to work"
+          this.draft.from && this.draft.to ? esc(autoName(this.draft.from, this.draft.to)) : "Home to work"
         }"></label>
         <div class="row"><button type="submit" class="primary" ${ready ? "" : "disabled"}>Save route</button><button type="button" class="link" data-act="cancel">Cancel</button></div>
       </form>`;
@@ -496,7 +618,7 @@ export class RoutePanel {
         <button type="button" class="chip" data-act="fit">Show on map</button>
         <button type="button" class="chip" data-act="refresh">Refresh</button>
       </div>`;
-    const bottom = `<div class="row tail"><button type="button" class="link" data-act="edit">Edit this route</button><button type="button" class="link" data-act="delete">Delete it</button></div>`;
+    const bottom = `<div class="row tail"><button type="button" class="link" data-act="edit">Edit this route</button><button type="button" class="link" data-act="share">Send to a phone</button><button type="button" class="link" data-act="delete">Delete it</button></div>`;
     if (!o) {
       const err = this.errors.get(k);
       return `${top}<p class="${err ? "err" : "hint"}">${err ? esc(err) : "Asking TomTom for today's traffic…"}</p>${bottom}`;
@@ -518,11 +640,13 @@ export class RoutePanel {
           <button type="button" class="link hide" data-act="hide" data-id="${a.item.id}" aria-label="Leave this camera off the route">Not on my way</button></li>`,
       )
       .join("");
+    const w = this.ways(k)!;
     return `${top}
       <div class="sum">
         <div class="big">${duration(res.seconds)}</div>
-        <div>${compareUsual(res)} · ${miles(res.meters)} · TomTom, ${clock(res.at)}</div>
+        <div>via ${esc(w.pick.name)} · ${compareUsual(res)} · ${miles(res.meters)} · TomTom, ${clock(res.at)}</div>
       </div>
+      ${w.list.length > 1 ? `<h3>Ways to go</h3><ol class="ways">${w.list.map((x) => this.wayItem(x, w)).join("")}</ol>` : ""}
       <h3>On the way</h3>
       ${alerts.length ? `<ol class="alerts">${alerts.map((a) => a.html).join("")}</ol>` : `<p class="hint">Nothing reported on the way.</p>`}
       <h3>Cameras on the way <span class="count">${o.cams.length}</span></h3>
@@ -534,6 +658,52 @@ export class RoutePanel {
       ${cams && o.dark ? `<p class="hint">${o.dark} more on the way ${o.dark === 1 ? "has" : "have"} no live feed right now.</p>` : ""}
       ${hiddenCount ? `<p class="hint">${hiddenCount} camera${hiddenCount === 1 ? "" : "s"} left off. <button type="button" class="link" data-act="unhide">Put them back</button></p>` : ""}
       ${bottom}`;
+  }
+
+  /** A way to go, picked with a tap: drawn solid on the map when picked, dashed otherwise. */
+  private wayItem(x: Way, w: { list: Way[]; pick: Way; usual: Way | null }) {
+    const on = x === w.pick;
+    const fast = x === w.list[0];
+    const note = w.usual && w.usual !== w.list[0] ? (fast ? "fastest now" : x === w.usual ? "usually fastest" : "") : "";
+    return `<li><button type="button" class="way${on ? " on" : ""}" data-act="way" data-name="${esc(x.name)}" aria-pressed="${on}">
+      <span class="stroke" aria-hidden="true"></span>
+      <span><b>${esc(x.name)}</b> ${duration(x.way.seconds)}${note ? ` <i>${note}</i>` : ""}<small>${this.wayWords(x.way)}</small></span></button></li>`;
+  }
+
+  /** Picks routes to send to another phone in a link. */
+  private shareView(picked: Set<string>, copied: string | null) {
+    const items = this.routes
+      .map((r) => {
+        const s = sharedRoute(r);
+        return `<li><label><input type="checkbox" data-pick="${r.id}" ${picked.has(r.id) ? "checked" : ""}>
+          <span><b>${esc(s.name)}</b><small>${esc(short(s.from.label))} → ${esc(short(s.to.label))}</small></span></label></li>`;
+      })
+      .join("");
+    return `${this.head("Send to a phone", "list")}
+      <p>Pick the routes to send. Whoever opens the link can add them to their own routes, on their phone or computer.</p>
+      <ul class="picks">${items}</ul>
+      <button type="button" class="primary" data-act="send" ${picked.size ? "" : "disabled"}>Send the link</button>
+      ${
+        copied
+          ? `<p class="ok">Link copied. Paste it into a text or an email.</p><input class="linkbox" readonly value="${esc(copied)}" aria-label="The link" onfocus="this.select()">`
+          : ""
+      }
+      <p class="hint">The link holds each route's name and its two ends, to about a block. A street address goes as its town, as shown above.</p>`;
+  }
+
+  /** Routes a link offers, saved only when the viewer says so. */
+  private offerView(routes: SharedRoute[]) {
+    const fresh = routes.filter((o) => !this.routes.some((r) => alreadySaved(r, o)));
+    const items = routes
+      .map((r) => `<li><span><b>${esc(r.name)}</b><small>${esc(short(r.from.label))} → ${esc(short(r.to.label))}</small></span></li>`)
+      .join("");
+    const these = routes.length === 1 ? "this route" : `these ${routes.length} routes`;
+    const add = fresh.length === 1 ? (routes.length === 1 ? "Add it" : "Add the new one") : fresh.length === routes.length ? "Add them" : `Add the ${fresh.length} new ones`;
+    return `${this.head("Routes from a link", null)}
+      <p>Add ${these} to your routes? They're saved in this browser, like routes you make here, and each one shows its time in today's traffic and the other ways to go.</p>
+      <ul class="picks">${items}</ul>
+      <div class="row"><button type="button" class="primary" data-act="accept">${add}</button><button type="button" class="link" data-act="decline">Not now</button></div>
+      <p class="hint">Bookmark the page once they're added: opening the bookmark shows them, and puts them back if the browser ever clears what it saved.</p>`;
   }
 
   private eventItem(a: Alert) {

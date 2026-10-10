@@ -10,6 +10,7 @@ import { TrafficMap } from "./mapview";
 import { nearbyCameras } from "./nearby";
 import { RADAR_VALID_URL, radarStamp } from "./radar";
 import { RoutePanel } from "./routes/panel";
+import { routesInLink } from "./routes/share";
 import { recall, remember } from "./routes/store";
 import type { EventKind, EventsResponse, TrafficEvent } from "./shared/types";
 import { onSchemeChange } from "./theme";
@@ -153,7 +154,7 @@ async function start() {
       items.push(`<li><span class="shut"></span>Closed <span class="note">TomTom</span></li>`);
     }
     if (pressed("bRadar")) items.push(`<li><span class="rain"></span>Rain, light to heavy <span class="note">radar${radarTime ? ` at ${clock(radarTime)}` : ""}</span></li>`);
-    items.push(`<li><span class="band"></span>Your route</li>`);
+    items.push(`<li><span class="band"></span>Your route</li>`, `<li><span class="band other"></span>Other ways to go</li>`);
     $("legendList").innerHTML = items.join("");
   }
 
@@ -292,8 +293,21 @@ async function start() {
     }
   });
 
+  // A link with routes in it (from someone's "Send to a phone") offers them. Once they're added
+  // the link stays in the address bar, so a bookmark of it shows them and puts them back if the
+  // browser clears its storage (Safari does after seven days of use without a visit); turning
+  // them down clears it.
+  const offerFromLink = () => {
+    const offered = routesInLink(location.hash);
+    if (offered) panel.offer(offered);
+    return !!offered;
+  };
+  panel.onOfferDeclined = () => history.replaceState(null, "", location.pathname + location.search);
+  window.addEventListener("hashchange", offerFromLink);
+  const offered = offerFromLink();
+
   await loadEvents();
-  if (panel.hasRoutes) panel.resume();
+  if (!offered && panel.hasRoutes) panel.resume();
   // For poking at the page from the console on the dev server.
   if (import.meta.env.DEV) Object.assign(window, { traffic: { tm, panel, card, events: () => events, cameras: cams.cameras, labels, webcams } });
 }
