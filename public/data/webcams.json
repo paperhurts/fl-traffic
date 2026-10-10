@@ -1,0 +1,1187 @@
+{
+  "checked": "2026-10-10",
+  "cams": [
+    {
+      "id": "lake-jackson",
+      "name": "Lake Jackson",
+      "by": "Leon County",
+      "kind": "lake",
+      "lon": -84.3234,
+      "lat": 30.524,
+      "page": "https://leon.weatherstem.com/fswnlakejackson"
+    },
+    {
+      "id": "choctaw-beach",
+      "name": "Choctaw Beach",
+      "by": "Walton County",
+      "kind": "bay",
+      "lon": -86.3307,
+      "lat": 30.477,
+      "page": "https://walton.weatherstem.com/fswnchoctawbch"
+    },
+    {
+      "id": "lake-bradford-fsu-lakefront-park",
+      "name": "Lake Bradford (FSU Lakefront Park)",
+      "by": "Florida State University",
+      "kind": "lake",
+      "lon": -84.337,
+      "lat": 30.4011,
+      "page": "https://leon.weatherstem.com/fsurez"
+    },
+    {
+      "id": "mayport-st-johns-river",
+      "name": "Mayport, St. Johns River",
+      "by": "Florida Severe Weather Network",
+      "kind": "river",
+      "lon": -81.4401,
+      "lat": 30.3905,
+      "page": "https://duval.weatherstem.com/fswnjfrd40"
+    },
+    {
+      "id": "fort-caroline-st-johns-river",
+      "name": "Fort Caroline, St. Johns River",
+      "by": "Florida Severe Weather Network",
+      "kind": "river",
+      "lon": -81.4989,
+      "lat": 30.3872,
+      "page": "https://duval.weatherstem.com/fswnfortcaroline"
+    },
+    {
+      "id": "ed-walline-beach-access",
+      "name": "Ed Walline Beach Access",
+      "by": "Walton County",
+      "kind": "beach",
+      "lon": -86.2298,
+      "lat": 30.3465,
+      "page": "https://walton.weatherstem.com/edwalline"
+    },
+    {
+      "id": "pensacola-beach-fire-station",
+      "name": "Pensacola Beach fire station",
+      "by": "Escambia County",
+      "kind": "beach",
+      "lon": -87.1152,
+      "lat": 30.3384,
+      "page": "https://escambia.weatherstem.com/fswnpensacolabeach"
+    },
+    {
+      "id": "pensacola-beach",
+      "name": "Pensacola Beach",
+      "by": "Santa Rosa Island Authority",
+      "kind": "beach",
+      "lon": -87.142,
+      "lat": 30.33,
+      "page": "https://visitpensacolabeach.com/web-cams/",
+      "views": [
+        {
+          "label": "South",
+          "youtube": "2X0GdFzfv3A"
+        },
+        {
+          "label": "East",
+          "youtube": "890WmHX7h6U"
+        },
+        {
+          "label": "West",
+          "youtube": "HKIc6CYlMzI"
+        }
+      ]
+    },
+    {
+      "id": "neptune-beach",
+      "name": "Neptune Beach",
+      "by": "Florida Severe Weather Network",
+      "kind": "beach",
+      "lon": -81.3948,
+      "lat": 30.3246,
+      "page": "https://duval.weatherstem.com/fswnneptunebch"
+    },
+    {
+      "id": "jacksonville-beach-pier",
+      "name": "Jacksonville Beach Pier",
+      "by": "Florida Severe Weather Network",
+      "kind": "pier",
+      "lon": -81.3893,
+      "lat": 30.2933,
+      "page": "https://duval.weatherstem.com/fswnjaxbeach"
+    },
+    {
+      "id": "panama-city-beach-tidewater",
+      "name": "Panama City Beach (Tidewater)",
+      "by": "WebCOOS",
+      "kind": "beach",
+      "lon": -85.887,
+      "lat": 30.2206,
+      "page": "https://webcoos.org/cameras/tidewaterpcb_east/"
+    },
+    {
+      "id": "m-b-miller-county-pier",
+      "name": "M.B. Miller County Pier",
+      "by": "Bay County",
+      "kind": "beach",
+      "lon": -85.8313,
+      "lat": 30.19,
+      "page": "https://bay.weatherstem.com/fswnpcbwest"
+    },
+    {
+      "id": "rick-seltzer-park",
+      "name": "Rick Seltzer Park",
+      "by": "Bay County",
+      "kind": "beach",
+      "lon": -85.7783,
+      "lat": 30.1588,
+      "page": "https://bay.weatherstem.com/fswnpcbeast"
+    },
+    {
+      "id": "gaskin-boat-ramp",
+      "name": "Gaskin Boat Ramp",
+      "by": "Gulf County",
+      "kind": "river",
+      "lon": -85.1424,
+      "lat": 30.1324,
+      "page": "https://gulf.weatherstem.com/fswngaskin"
+    },
+    {
+      "id": "st-marks-lighthouse",
+      "name": "St. Marks Lighthouse",
+      "by": "Wakulla County",
+      "kind": "bay",
+      "lon": -84.1804,
+      "lat": 30.0744,
+      "page": "https://wakulla.weatherstem.com/fswnstmarks"
+    },
+    {
+      "id": "shell-point",
+      "name": "Shell Point",
+      "by": "Wakulla County",
+      "kind": "beach",
+      "lon": -84.2904,
+      "lat": 30.0579,
+      "page": "https://wakulla.weatherstem.com/fswnspb"
+    },
+    {
+      "id": "ochlockonee-boat-ramp",
+      "name": "Ochlockonee Boat Ramp",
+      "by": "Franklin County",
+      "kind": "bay",
+      "lon": -84.3848,
+      "lat": 29.9609,
+      "page": "https://franklin.weatherstem.com/fswnochlockonee"
+    },
+    {
+      "id": "mexico-beach-marina",
+      "name": "Mexico Beach marina",
+      "by": "Florida Severe Weather Network",
+      "kind": "marina",
+      "lon": -85.4299,
+      "lat": 29.9535,
+      "page": "https://bay.weatherstem.com/fswnmexicobch"
+    },
+    {
+      "id": "mexico-beach-driftwood",
+      "name": "Mexico Beach (Driftwood)",
+      "by": "Mexico Beach",
+      "kind": "beach",
+      "lon": -85.416,
+      "lat": 29.9445,
+      "page": "https://mexicobeach.com/mexico-beach/beach-cam/"
+    },
+    {
+      "id": "veterans-memorial-park",
+      "name": "Veterans Memorial Park",
+      "by": "Gulf County",
+      "kind": "beach",
+      "lon": -85.3801,
+      "lat": 29.9179,
+      "page": "https://gulf.weatherstem.com/fswnveteransmemorial"
+    },
+    {
+      "id": "fsu-coastal-and-marine-lab-turkey-point",
+      "name": "FSU Coastal and Marine Lab, Turkey Point",
+      "by": "Florida State University",
+      "kind": "marina",
+      "lon": -84.5115,
+      "lat": 29.9166,
+      "page": "https://franklin.weatherstem.com/fsucml"
+    },
+    {
+      "id": "alligator-point",
+      "name": "Alligator Point",
+      "by": "Franklin County",
+      "kind": "bay",
+      "lon": -84.3728,
+      "lat": 29.8958,
+      "page": "https://franklin.weatherstem.com/fswnalligatorpoint"
+    },
+    {
+      "id": "st-augustine-municipal-marina",
+      "name": "St. Augustine Municipal Marina",
+      "by": "City of St. Augustine",
+      "kind": "marina",
+      "lon": -81.3084,
+      "lat": 29.8915,
+      "page": "https://stjohns.weatherstem.com/fswncitystaug"
+    },
+    {
+      "id": "white-city",
+      "name": "White City",
+      "by": "Gulf County",
+      "kind": "river",
+      "lon": -85.221,
+      "lat": 29.8806,
+      "page": "https://gulf.weatherstem.com/fswnwhitecity"
+    },
+    {
+      "id": "island-view-park-carrabelle",
+      "name": "Island View Park, Carrabelle",
+      "by": "Franklin County",
+      "kind": "pier",
+      "lon": -84.6358,
+      "lat": 29.8539,
+      "page": "https://franklin.weatherstem.com/fswnislandviewpark"
+    },
+    {
+      "id": "carrabelle-river",
+      "name": "Carrabelle River",
+      "by": "City of Carrabelle",
+      "kind": "river",
+      "lon": -84.665,
+      "lat": 29.8525,
+      "page": "https://www.mycarrabellecra.com/webcam/"
+    },
+    {
+      "id": "dog-island",
+      "name": "Dog Island",
+      "by": "Franklin County",
+      "kind": "beach",
+      "lon": -84.5833,
+      "lat": 29.8066,
+      "page": "https://franklin.weatherstem.com/fswndogisland"
+    },
+    {
+      "id": "st-george-island-bridge",
+      "name": "St. George Island Bridge",
+      "by": "Franklin County",
+      "kind": "bay",
+      "lon": -84.8874,
+      "lat": 29.7138,
+      "page": "https://franklin.weatherstem.com/sgibridge"
+    },
+    {
+      "id": "salinas-park",
+      "name": "Salinas Park",
+      "by": "Gulf County",
+      "kind": "beach",
+      "lon": -85.3101,
+      "lat": 29.6845,
+      "page": "https://gulf.weatherstem.com/fswnsalinaspark"
+    },
+    {
+      "id": "marineland",
+      "name": "Marineland",
+      "by": "Flagler County",
+      "kind": "beach",
+      "lon": -81.2136,
+      "lat": 29.6705,
+      "page": "https://flagler.weatherstem.com/fswnmarineland"
+    },
+    {
+      "id": "cape-st-george-lighthouse",
+      "name": "Cape St. George Lighthouse",
+      "by": "St. George Lighthouse Association",
+      "kind": "beach",
+      "lon": -84.8621,
+      "lat": 29.6626,
+      "page": "https://www.sgilighthousecam.com/"
+    },
+    {
+      "id": "hammock-dunes-bridge-intracoastal",
+      "name": "Hammock Dunes Bridge, Intracoastal",
+      "by": "Flagler County",
+      "kind": "river",
+      "lon": -81.1886,
+      "lat": 29.5738,
+      "page": "https://flagler.weatherstem.com/hammockdunesbridge"
+    },
+    {
+      "id": "flagler-beach",
+      "name": "Flagler Beach",
+      "by": "Visit Flagler",
+      "kind": "beach",
+      "lon": -81.1256,
+      "lat": 29.4802,
+      "page": "https://www.visitflagler.com/beaches/webcams/"
+    },
+    {
+      "id": "ormond-by-the-sea",
+      "name": "Ormond-By-The-Sea",
+      "by": "Volusia County Beach Safety",
+      "kind": "beach",
+      "lon": -81.063,
+      "lat": 29.345,
+      "page": "https://www.volusia.org/services/public-protection/beach-safety/beachcams-and-daily-safety-report.stml",
+      "views": [
+        {
+          "label": "Beach",
+          "youtube": "-grSyQa817o"
+        }
+      ]
+    },
+    {
+      "id": "ormond-beach",
+      "name": "Ormond Beach",
+      "by": "Volusia County Beach Safety",
+      "kind": "beach",
+      "lon": -81.044,
+      "lat": 29.286,
+      "page": "https://www.volusia.org/services/public-protection/beach-safety/beachcams-and-daily-safety-report.stml",
+      "views": [
+        {
+          "label": "Beach",
+          "youtube": "p1s7EdZgGvU"
+        }
+      ]
+    },
+    {
+      "id": "silver-springs",
+      "name": "Silver Springs",
+      "by": "Save the Manatee Club",
+      "kind": "spring",
+      "lon": -82.0485,
+      "lat": 29.2157,
+      "page": "https://savethemanatee.org/manatees/webcams/",
+      "views": [
+        {
+          "label": "Above water",
+          "youtube": "4a0vQYiZEPU"
+        },
+        {
+          "label": "Underwater",
+          "youtube": "P4n5TxnGIH4"
+        }
+      ],
+      "note": "Manatee season runs about mid-November to March; out of season it shows highlights."
+    },
+    {
+      "id": "shell-mound-park-cedar-key",
+      "name": "Shell Mound Park, Cedar Key",
+      "by": "Florida Severe Weather Network",
+      "kind": "marina",
+      "lon": -83.0673,
+      "lat": 29.2069,
+      "page": "https://levy.weatherstem.com/fswnshellmound"
+    },
+    {
+      "id": "fornari-park-daytona-beach-shores",
+      "name": "Fornari Park, Daytona Beach Shores",
+      "by": "City of Daytona Beach Shores",
+      "kind": "beach",
+      "lon": -80.9785,
+      "lat": 29.1691,
+      "page": "https://www.dbshores.org/425/Fornari-Park-Beach-CAM"
+    },
+    {
+      "id": "dunlawton-daytona-beach-shores",
+      "name": "Dunlawton, Daytona Beach Shores",
+      "by": "Volusia County Beach Safety",
+      "kind": "beach",
+      "lon": -80.961,
+      "lat": 29.147,
+      "page": "https://www.volusia.org/services/public-protection/beach-safety/beachcams-and-daily-safety-report.stml",
+      "views": [
+        {
+          "label": "Beach",
+          "youtube": "3hwTkO_5KXo"
+        }
+      ]
+    },
+    {
+      "id": "ponce-inlet",
+      "name": "Ponce Inlet",
+      "by": "Volusia County Beach Safety",
+      "kind": "beach",
+      "lon": -80.922,
+      "lat": 29.082,
+      "page": "https://www.volusia.org/services/public-protection/beach-safety/beachcams-and-daily-safety-report.stml",
+      "views": [
+        {
+          "label": "Beach",
+          "youtube": "ZCozdEGwkDI"
+        }
+      ]
+    },
+    {
+      "id": "new-smyrna-beach",
+      "name": "New Smyrna Beach",
+      "by": "Volusia County Beach Safety",
+      "kind": "beach",
+      "lon": -80.892,
+      "lat": 29.0335,
+      "page": "https://www.volusia.org/services/public-protection/beach-safety/beachcams-and-daily-safety-report.stml",
+      "views": [
+        {
+          "label": "Beach",
+          "youtube": "550p9smwjPM"
+        }
+      ]
+    },
+    {
+      "id": "blue-spring",
+      "name": "Blue Spring",
+      "by": "Save the Manatee Club",
+      "kind": "spring",
+      "lon": -81.3409,
+      "lat": 28.9434,
+      "page": "https://savethemanatee.org/manatees/webcams/",
+      "views": [
+        {
+          "label": "Above water",
+          "youtube": "ZpcQpPB3GKA"
+        },
+        {
+          "label": "Underwater",
+          "youtube": "Nkvi4BLL4Bw"
+        }
+      ],
+      "note": "Manatee season runs about mid-November to March; out of season it shows highlights."
+    },
+    {
+      "id": "kings-bay-crystal-river",
+      "name": "Kings Bay, Crystal River",
+      "by": "Discover Crystal River",
+      "kind": "bay",
+      "lon": -82.599,
+      "lat": 28.9002,
+      "page": "https://www.discovercrystalriverfl.com/live-river-cam/"
+    },
+    {
+      "id": "homosassa-springs",
+      "name": "Homosassa Springs",
+      "by": "Save the Manatee Club",
+      "kind": "spring",
+      "lon": -82.5883,
+      "lat": 28.7993,
+      "page": "https://savethemanatee.org/manatees/webcams/",
+      "views": [
+        {
+          "label": "Above water",
+          "youtube": "R_L7_r0lXw4"
+        },
+        {
+          "label": "Underwater",
+          "youtube": "YGD4JppXDD8"
+        }
+      ],
+      "note": "Manatee season runs about mid-November to March; out of season it shows highlights."
+    },
+    {
+      "id": "homosassa-river",
+      "name": "Homosassa River",
+      "by": "Discover Crystal River",
+      "kind": "river",
+      "lon": -82.6187,
+      "lat": 28.785,
+      "page": "https://www.discovercrystalriverfl.com/live-river-cam/"
+    },
+    {
+      "id": "buoy-42039",
+      "name": "Buoy 42039, 115 nautical miles off Pensacola",
+      "by": "NOAA",
+      "kind": "offshore",
+      "lon": -86.024,
+      "lat": 28.768,
+      "page": "https://www.ndbc.noaa.gov/station_page.php?station=42039",
+      "views": [
+        {
+          "label": "Latest pictures",
+          "picture": "https://www.ndbc.noaa.gov/buoycam.php?station=42039"
+        }
+      ],
+      "note": "Six pictures, all the way around the buoy. They're dark at night."
+    },
+    {
+      "id": "buoy-41009",
+      "name": "Buoy 41009, 20 nautical miles off Cape Canaveral",
+      "by": "NOAA",
+      "kind": "offshore",
+      "lon": -80.185,
+      "lat": 28.508,
+      "page": "https://www.ndbc.noaa.gov/station_page.php?station=41009",
+      "views": [
+        {
+          "label": "Latest pictures",
+          "picture": "https://www.ndbc.noaa.gov/buoycam.php?station=41009"
+        }
+      ],
+      "note": "Six pictures, all the way around the buoy. They're dark at night."
+    },
+    {
+      "id": "buoy-42036",
+      "name": "Buoy 42036, 112 nautical miles off Tampa",
+      "by": "NOAA",
+      "kind": "offshore",
+      "lon": -84.505,
+      "lat": 28.5,
+      "page": "https://www.ndbc.noaa.gov/station_page.php?station=42036",
+      "views": [
+        {
+          "label": "Latest pictures",
+          "picture": "https://www.ndbc.noaa.gov/buoycam.php?station=42036"
+        }
+      ],
+      "note": "Six pictures, all the way around the buoy. They're dark at night."
+    },
+    {
+      "id": "port-canaveral",
+      "name": "Port Canaveral",
+      "by": "Florida Severe Weather Network",
+      "kind": "marina",
+      "lon": -80.6262,
+      "lat": 28.4108,
+      "page": "https://brevard.weatherstem.com/fswnportcanaveral"
+    },
+    {
+      "id": "jetty-park",
+      "name": "Jetty Park",
+      "by": "Visit Space Coast",
+      "kind": "pier",
+      "lon": -80.5917,
+      "lat": 28.4076,
+      "page": "https://www.visitspacecoast.com/jetty-park-surf-cam/"
+    },
+    {
+      "id": "cocoa-beach-best-western",
+      "name": "Cocoa Beach (Best Western)",
+      "by": "Visit Space Coast",
+      "kind": "beach",
+      "lon": -80.602,
+      "lat": 28.386,
+      "page": "https://www.visitspacecoast.com/cocoa-beach-best-western-surf-cam/"
+    },
+    {
+      "id": "cocoa-beach-hampton-inn",
+      "name": "Cocoa Beach (Hampton Inn)",
+      "by": "Visit Space Coast",
+      "kind": "beach",
+      "lon": -80.605,
+      "lat": 28.35,
+      "page": "https://www.visitspacecoast.com/cocoa-beach-hampton-inn-surf-cam/"
+    },
+    {
+      "id": "satellite-beach",
+      "name": "Satellite Beach",
+      "by": "Visit Space Coast",
+      "kind": "beach",
+      "lon": -80.59,
+      "lat": 28.176,
+      "page": "https://www.visitspacecoast.com/satellite-beach-surf-cam/"
+    },
+    {
+      "id": "indialantic",
+      "name": "Indialantic",
+      "by": "Visit Space Coast",
+      "kind": "beach",
+      "lon": -80.5657,
+      "lat": 28.0893,
+      "page": "https://www.visitspacecoast.com/indialantic-surf-cam/"
+    },
+    {
+      "id": "clearwater-beach",
+      "name": "Clearwater Beach",
+      "by": "City of Clearwater",
+      "kind": "beach",
+      "lon": -82.8291,
+      "lat": 27.9758,
+      "page": "https://www.myclearwater.com/Visit-the-Beach/Watch-Live-Video-of-Clearwater-Beach"
+    },
+    {
+      "id": "sebastian-inlet",
+      "name": "Sebastian Inlet",
+      "by": "Sebastian Inlet District",
+      "kind": "inlet",
+      "lon": -80.4468,
+      "lat": 27.8606,
+      "page": "https://www.sebastianinletcam.com/"
+    },
+    {
+      "id": "madeira-beach",
+      "name": "Madeira Beach",
+      "by": "USGS",
+      "kind": "beach",
+      "lon": -82.7961,
+      "lat": 27.7962,
+      "page": "https://apps.usgs.gov/hivis/camera/FL_Madeira_Beach",
+      "views": [
+        {
+          "label": "Looking north",
+          "picture": "https://usgs-nims-images.s3.amazonaws.com/720/FL_Madeira_Beach/FL_Madeira_Beach_newest.jpg"
+        }
+      ],
+      "note": "A new picture every half hour by daylight."
+    },
+    {
+      "id": "wabasso-beach-park",
+      "name": "Wabasso Beach Park",
+      "by": "Indian River County",
+      "kind": "beach",
+      "lon": -80.3971,
+      "lat": 27.7633,
+      "page": "https://www.indianriver.gov/services/natural_resources/coastal_engineering/beach-cam.php"
+    },
+    {
+      "id": "fort-hamer-park",
+      "name": "Fort Hamer Park",
+      "by": "Manatee County",
+      "kind": "river",
+      "lon": -82.4302,
+      "lat": 27.5254,
+      "page": "https://manatee.weatherstem.com/fthamer"
+    },
+    {
+      "id": "lake-manatee-dam",
+      "name": "Lake Manatee Dam",
+      "by": "Manatee County",
+      "kind": "lake",
+      "lon": -82.3528,
+      "lat": 27.4962,
+      "page": "https://manatee.weatherstem.com/lakemanateedam"
+    },
+    {
+      "id": "fort-pierce-inlet-state-park",
+      "name": "Fort Pierce Inlet State Park",
+      "by": "Visit St. Lucie",
+      "kind": "beach",
+      "lon": -80.3031,
+      "lat": 27.4787,
+      "page": "https://visitstlucie.com/fort-pierce-inlet-webcam-surf/"
+    },
+    {
+      "id": "fort-pierce-jetty-park",
+      "name": "Fort Pierce, Jetty Park",
+      "by": "Visit St. Lucie",
+      "kind": "beach",
+      "lon": -80.2913,
+      "lat": 27.47,
+      "page": "https://visitstlucie.com/fort-pierce-inlet-webcam-jetty-beach/"
+    },
+    {
+      "id": "fort-pierce-inlet",
+      "name": "Fort Pierce Inlet",
+      "by": "Visit St. Lucie",
+      "kind": "inlet",
+      "lon": -80.3047,
+      "lat": 27.467,
+      "page": "https://visitstlucie.com/fort-pierce-inlet-waterway/"
+    },
+    {
+      "id": "jiggs-landing",
+      "name": "Jiggs Landing",
+      "by": "Manatee County",
+      "kind": "river",
+      "lon": -82.482,
+      "lat": 27.4327,
+      "page": "https://manatee.weatherstem.com/jiggslanding"
+    },
+    {
+      "id": "st-lucie-river-port-st-lucie",
+      "name": "St. Lucie River, Port St. Lucie",
+      "by": "Visit St. Lucie",
+      "kind": "river",
+      "lon": -80.3188,
+      "lat": 27.278,
+      "page": "https://visitstlucie.com/the-boardwalk-at-the-port/"
+    },
+    {
+      "id": "siesta-beach",
+      "name": "Siesta Beach",
+      "by": "Visit Sarasota County",
+      "kind": "beach",
+      "lon": -82.5504,
+      "lat": 27.2658,
+      "page": "https://www.visitsarasota.com/siesta-key-beach-cam",
+      "views": [
+        {
+          "label": "Beach",
+          "youtube": "NLhxcyzXQxM"
+        }
+      ]
+    },
+    {
+      "id": "jensen-beach-park",
+      "name": "Jensen Beach Park",
+      "by": "Martin County",
+      "kind": "beach",
+      "lon": -80.1971,
+      "lat": 27.2557,
+      "page": "https://video-monitoring.com/beachcams/jensen/"
+    },
+    {
+      "id": "bathtub-reef-beach",
+      "name": "Bathtub Reef Beach",
+      "by": "Martin County",
+      "kind": "beach",
+      "lon": -80.1607,
+      "lat": 27.1859,
+      "page": "https://video-monitoring.com/beachcams/bathtub/"
+    },
+    {
+      "id": "jupiter-inlet",
+      "name": "Jupiter Inlet",
+      "by": "Jupiter Inlet District",
+      "kind": "inlet",
+      "lon": -80.0748,
+      "lat": 26.9489,
+      "page": "https://video-monitoring.com/beachcams/jupiter/"
+    },
+    {
+      "id": "loxahatchee-river-at-lainhart-dam",
+      "name": "Loxahatchee River at Lainhart Dam",
+      "by": "USGS",
+      "kind": "river",
+      "lon": -80.1749,
+      "lat": 26.9393,
+      "page": "https://apps.usgs.gov/hivis/camera/FL_Loxahatchee_River_Dws_Lainhart_Dam_nr_Jupiter",
+      "views": [
+        {
+          "label": "Lainhart Dam",
+          "picture": "https://usgs-nims-images.s3.amazonaws.com/720/FL_Loxahatchee_River_Dws_Lainhart_Dam_nr_Jupiter/FL_Loxahatchee_River_Dws_Lainhart_Dam_nr_Jupiter_newest.jpg"
+        }
+      ],
+      "note": "A new picture every hour by daylight."
+    },
+    {
+      "id": "englewood-beach",
+      "name": "Englewood Beach",
+      "by": "Visit Punta Gorda & Englewood Beach",
+      "kind": "beach",
+      "lon": -82.3568,
+      "lat": 26.9184,
+      "page": "https://www.pureflorida.com/beaches/live-beach-cam/"
+    },
+    {
+      "id": "juno-beach-pier",
+      "name": "Juno Beach Pier",
+      "by": "Loggerhead Marinelife Center",
+      "kind": "pier",
+      "lon": -80.0557,
+      "lat": 26.8933,
+      "page": "https://marinelife.org/juno-beach-pier/"
+    },
+    {
+      "id": "lake-worth-inlet",
+      "name": "Lake Worth Inlet",
+      "by": "Palm Beach County",
+      "kind": "inlet",
+      "lon": -80.0332,
+      "lat": 26.7725,
+      "page": "https://video-monitoring.com/beachcams/lakeworthinlet/"
+    },
+    {
+      "id": "boca-grande-lighthouse-beach",
+      "name": "Boca Grande Lighthouse beach",
+      "by": "Lee County visitors bureau",
+      "kind": "beach",
+      "lon": -82.2609,
+      "lat": 26.7173,
+      "page": "https://www.visitfortmyers.com/webcams#boca-grande"
+    },
+    {
+      "id": "bokeelia-pine-island",
+      "name": "Bokeelia, Pine Island",
+      "by": "Lee County visitors bureau",
+      "kind": "marina",
+      "lon": -82.1625,
+      "lat": 26.7111,
+      "page": "https://www.visitfortmyers.com/webcams#pine-island"
+    },
+    {
+      "id": "manatee-park-orange-river",
+      "name": "Manatee Park, Orange River",
+      "by": "Lee County visitors bureau",
+      "kind": "river",
+      "lon": -81.7778,
+      "lat": 26.6937,
+      "page": "https://www.visitfortmyers.com/webcams#manatee-park"
+    },
+    {
+      "id": "north-shore-park-caloosahatchee",
+      "name": "North Shore Park, Caloosahatchee",
+      "by": "Lee County visitors bureau",
+      "kind": "river",
+      "lon": -81.882,
+      "lat": 26.6563,
+      "page": "https://www.visitfortmyers.com/webcams#north-fort-myers"
+    },
+    {
+      "id": "midpoint-bridge",
+      "name": "Midpoint Bridge",
+      "by": "Lee County",
+      "kind": "river",
+      "lon": -81.9027,
+      "lat": 26.6023,
+      "page": "https://lee.weatherstem.com/midpointbridge"
+    },
+    {
+      "id": "boynton-inlet",
+      "name": "Boynton Inlet",
+      "by": "Palm Beach County",
+      "kind": "inlet",
+      "lon": -80.0438,
+      "lat": 26.5446,
+      "page": "https://video-monitoring.com/beachcams/boyntoninlet/"
+    },
+    {
+      "id": "turner-beach-and-blind-pass-captiva",
+      "name": "Turner Beach and Blind Pass, Captiva",
+      "by": "Lee County visitors bureau",
+      "kind": "beach",
+      "lon": -82.1839,
+      "lat": 26.483,
+      "page": "https://www.visitfortmyers.com/webcams#captiva-island"
+    },
+    {
+      "id": "sanibel-causeway",
+      "name": "Sanibel Causeway",
+      "by": "City of Sanibel",
+      "kind": "bay",
+      "lon": -82.0147,
+      "lat": 26.4829,
+      "page": "https://www.mysanibel.com/466/Causeway"
+    },
+    {
+      "id": "ding-darling-refuge-sanibel",
+      "name": "Ding Darling refuge, Sanibel",
+      "by": "Lee County visitors bureau",
+      "kind": "bay",
+      "lon": -82.1437,
+      "lat": 26.4776,
+      "page": "https://www.visitfortmyers.com/webcams#jn-ding-darling-wildlife-refuge"
+    },
+    {
+      "id": "fort-myers-beach-pink-shell",
+      "name": "Fort Myers Beach, Pink Shell",
+      "by": "Lee County",
+      "kind": "beach",
+      "lon": -81.965,
+      "lat": 26.4606,
+      "page": "https://lee.weatherstem.com/fortmyersbeach"
+    },
+    {
+      "id": "fort-myers-beach-times-square",
+      "name": "Fort Myers Beach, Times Square",
+      "by": "Lee County visitors bureau",
+      "kind": "beach",
+      "lon": -81.9566,
+      "lat": 26.4526,
+      "page": "https://www.visitfortmyers.com/webcams#fort-myers-beach"
+    },
+    {
+      "id": "sanibel-lighthouse-beach",
+      "name": "Sanibel Lighthouse Beach",
+      "by": "Lee County visitors bureau",
+      "kind": "beach",
+      "lon": -82.016,
+      "lat": 26.4522,
+      "page": "https://www.visitfortmyers.com/webcams#sanibel-island"
+    },
+    {
+      "id": "lovers-key-state-park",
+      "name": "Lovers Key State Park",
+      "by": "Lee County visitors bureau",
+      "kind": "bay",
+      "lon": -81.873,
+      "lat": 26.3969,
+      "page": "https://www.visitfortmyers.com/webcams#lovers-key-state-park"
+    },
+    {
+      "id": "south-beach-park-boca-raton",
+      "name": "South Beach Park, Boca Raton",
+      "by": "City of Boca Raton",
+      "kind": "beach",
+      "lon": -80.0699,
+      "lat": 26.3535,
+      "page": "https://video-monitoring.com/beachcams/boca/"
+    },
+    {
+      "id": "boca-raton-inlet",
+      "name": "Boca Raton Inlet",
+      "by": "Palm Beach County",
+      "kind": "inlet",
+      "lon": -80.073,
+      "lat": 26.3347,
+      "page": "https://video-monitoring.com/beachcams/bocainlet/"
+    },
+    {
+      "id": "deerfield-beach",
+      "name": "Deerfield Beach",
+      "by": "City of Deerfield Beach",
+      "kind": "beach",
+      "lon": -80.074,
+      "lat": 26.3165,
+      "page": "https://www.deerfield-beach.com/1474/Livestream-Cameras",
+      "views": [
+        {
+          "label": "Beach",
+          "youtube": "rdeoEeJ00xA"
+        },
+        {
+          "label": "Fishing pier",
+          "youtube": "H33wtprQqSM"
+        },
+        {
+          "label": "Surf",
+          "youtube": "hIeFPNHfuoY"
+        },
+        {
+          "label": "Sport",
+          "youtube": "1PLqzPwXP0c"
+        },
+        {
+          "label": "Underwater at the pier",
+          "youtube": "SHfAtWHr9Ks"
+        }
+      ]
+    },
+    {
+      "id": "wahoo-bay",
+      "name": "Wahoo Bay",
+      "by": "Wahoo Bay",
+      "kind": "reef",
+      "lon": -80.0806,
+      "lat": 26.2573,
+      "page": "https://www.pompanobeachfl.gov/webcams#wahoo",
+      "views": [
+        {
+          "label": "Underwater",
+          "youtube": "oBTGY6Ax870"
+        }
+      ]
+    },
+    {
+      "id": "pompano-beach-hillsboro-inlet",
+      "name": "Pompano Beach, Hillsboro Inlet",
+      "by": "City of Pompano Beach",
+      "kind": "marina",
+      "lon": -80.0915,
+      "lat": 26.2512,
+      "page": "https://www.pompanobeachfl.gov/webcams#inlet"
+    },
+    {
+      "id": "pompano-beach-pier",
+      "name": "Pompano Beach pier",
+      "by": "City of Pompano Beach",
+      "kind": "beach",
+      "lon": -80.0873,
+      "lat": 26.2352,
+      "page": "https://www.pompanobeachfl.gov/webcams#pier"
+    },
+    {
+      "id": "lauderdale-by-the-sea",
+      "name": "Lauderdale-By-The-Sea",
+      "by": "Town of Lauderdale-By-The-Sea",
+      "kind": "pier",
+      "lon": -80.0955,
+      "lat": 26.1899,
+      "page": "https://www.discoverlbts.com/live-beach-webcam/"
+    },
+    {
+      "id": "naples-pier",
+      "name": "Naples Pier",
+      "by": "City of Naples",
+      "kind": "pier",
+      "lon": -81.8077,
+      "lat": 26.1316,
+      "page": "https://naplespanorama.org/"
+    },
+    {
+      "id": "hollywood-beach",
+      "name": "Hollywood Beach",
+      "by": "City of Hollywood",
+      "kind": "beach",
+      "lon": -80.1151,
+      "lat": 26.0195,
+      "page": "https://www.hollywoodfl.org/1047/Hollywood-Beach-Webcams",
+      "views": [
+        {
+          "label": "Johnson Street",
+          "youtube": "cmkAbDUEoyA"
+        },
+        {
+          "label": "Theatre",
+          "youtube": "pcPwY5Qg594"
+        }
+      ]
+    },
+    {
+      "id": "sunny-isles-beach",
+      "name": "Sunny Isles Beach",
+      "by": "Greater Miami visitors bureau",
+      "kind": "beach",
+      "lon": -80.1205,
+      "lat": 25.9408,
+      "page": "https://www.miamiandbeaches.com/plan-your-trip/miami-webcams"
+    },
+    {
+      "id": "newport-fishing-pier-sunny-isles-beach",
+      "name": "Newport Fishing Pier, Sunny Isles Beach",
+      "by": "Greater Miami visitors bureau",
+      "kind": "pier",
+      "lon": -80.1194,
+      "lat": 25.9301,
+      "page": "https://www.miamiandbeaches.com/plan-your-trip/miami-webcams"
+    },
+    {
+      "id": "miami-beach-45th-street",
+      "name": "Miami Beach, 45th Street",
+      "by": "Greater Miami visitors bureau",
+      "kind": "beach",
+      "lon": -80.1218,
+      "lat": 25.8195,
+      "page": "https://www.miamiandbeaches.com/plan-your-trip/miami-webcams"
+    },
+    {
+      "id": "miami-beach-21st-street",
+      "name": "Miami Beach, 21st Street",
+      "by": "Greater Miami visitors bureau",
+      "kind": "beach",
+      "lon": -80.1273,
+      "lat": 25.7975,
+      "page": "https://www.miamiandbeaches.com/plan-your-trip/miami-webcams"
+    },
+    {
+      "id": "biscayne-bay-and-portmiami",
+      "name": "Biscayne Bay and PortMiami",
+      "by": "Greater Miami visitors bureau",
+      "kind": "bay",
+      "lon": -80.1862,
+      "lat": 25.7916,
+      "page": "https://www.miamiandbeaches.com/plan-your-trip/miami-webcams"
+    },
+    {
+      "id": "macarthur-causeway",
+      "name": "MacArthur Causeway",
+      "by": "Greater Miami visitors bureau",
+      "kind": "bay",
+      "lon": -80.1691,
+      "lat": 25.7797,
+      "page": "https://www.ozolio.com/explore/KSNR000018D5"
+    },
+    {
+      "id": "bayfront-park",
+      "name": "Bayfront Park",
+      "by": "Greater Miami visitors bureau",
+      "kind": "bay",
+      "lon": -80.1855,
+      "lat": 25.7724,
+      "page": "https://www.miamiandbeaches.com/plan-your-trip/miami-webcams"
+    },
+    {
+      "id": "miami-beach-1st-street",
+      "name": "Miami Beach, 1st Street",
+      "by": "Greater Miami visitors bureau",
+      "kind": "beach",
+      "lon": -80.1324,
+      "lat": 25.7697,
+      "page": "https://www.miamiandbeaches.com/plan-your-trip/miami-webcams"
+    },
+    {
+      "id": "historic-virginia-key-beach-park",
+      "name": "Historic Virginia Key Beach Park",
+      "by": "Greater Miami visitors bureau",
+      "kind": "beach",
+      "lon": -80.1563,
+      "lat": 25.7364,
+      "page": "https://www.miamiandbeaches.com/plan-your-trip/miami-webcams"
+    },
+    {
+      "id": "coconut-grove",
+      "name": "Coconut Grove",
+      "by": "Greater Miami visitors bureau",
+      "kind": "marina",
+      "lon": -80.2407,
+      "lat": 25.7272,
+      "page": "https://www.miamiandbeaches.com/plan-your-trip/miami-webcams"
+    },
+    {
+      "id": "deering-estate",
+      "name": "Deering Estate",
+      "by": "Greater Miami visitors bureau",
+      "kind": "bay",
+      "lon": -80.3067,
+      "lat": 25.6157,
+      "page": "https://www.miamiandbeaches.com/plan-your-trip/miami-webcams"
+    },
+    {
+      "id": "anhinga-trail-everglades",
+      "name": "Anhinga Trail, Everglades",
+      "by": "Everglades National Park",
+      "kind": "marsh",
+      "lon": -80.6096,
+      "lat": 25.3825,
+      "page": "https://video-monitoring.com/everglades/royalpalm/"
+    },
+    {
+      "id": "jewfish-creek-bridge",
+      "name": "Jewfish Creek Bridge",
+      "by": "Florida Keys tourism council",
+      "kind": "bay",
+      "lon": -80.3849,
+      "lat": 25.1824,
+      "page": "https://visitfloridakeys.com/discover-the-keys/see-the-keys/webcams"
+    },
+    {
+      "id": "key-largo-harbor",
+      "name": "Key Largo Harbor",
+      "by": "Florida Keys tourism council",
+      "kind": "marina",
+      "lon": -80.432,
+      "lat": 25.0966,
+      "page": "https://visitfloridakeys.com/discover-the-keys/see-the-keys/webcams"
+    },
+    {
+      "id": "whale-harbor-islamorada",
+      "name": "Whale Harbor, Islamorada",
+      "by": "Florida Keys tourism council",
+      "kind": "marina",
+      "lon": -80.6107,
+      "lat": 24.9394,
+      "page": "https://visitfloridakeys.com/discover-the-keys/see-the-keys/webcams"
+    },
+    {
+      "id": "little-basin-islamorada",
+      "name": "Little Basin, Islamorada",
+      "by": "Florida Keys tourism council",
+      "kind": "marina",
+      "lon": -80.6332,
+      "lat": 24.9216,
+      "page": "https://visitfloridakeys.com/discover-the-keys/see-the-keys/webcams"
+    },
+    {
+      "id": "sombrero-beach-marathon",
+      "name": "Sombrero Beach, Marathon",
+      "by": "Florida Keys tourism council",
+      "kind": "beach",
+      "lon": -81.0858,
+      "lat": 24.6917,
+      "page": "https://visitfloridakeys.com/discover-the-keys/see-the-keys/webcams"
+    },
+    {
+      "id": "bahia-honda",
+      "name": "Bahia Honda",
+      "by": "Florida Keys tourism council",
+      "kind": "beach",
+      "lon": -81.2615,
+      "lat": 24.6647,
+      "page": "https://visitfloridakeys.com/discover-the-keys/see-the-keys/webcams"
+    },
+    {
+      "id": "key-west-bight",
+      "name": "Key West Bight",
+      "by": "Florida Keys tourism council",
+      "kind": "marina",
+      "lon": -81.8011,
+      "lat": 24.5634,
+      "page": "https://visitfloridakeys.com/discover-the-keys/see-the-keys/webcams"
+    }
+  ]
+}

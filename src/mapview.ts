@@ -1,7 +1,7 @@
 // The map: OpenFreeMap's basemap tinted to the page's colors, TomTom's speeds,
-// the open route, FL511's cameras, and FL511's events, in that order from the
-// bottom. A color-scheme change reloads the basemap, and every layer here is
-// added again from what the page last gave it.
+// the open route, FL511's cameras, the water cams, and FL511's events, in that
+// order from the bottom. A color-scheme change reloads the basemap, and every
+// layer here is added again from what the page last gave it.
 
 import {
   GeoJSONSource,
@@ -22,13 +22,14 @@ import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import { BASEMAP, FLORIDA } from "./config";
 import { hasFeed } from "./data";
 import type { LngLat } from "./geo";
-import { KINDS, markerImage } from "./icons";
+import { KINDS, markerImage, waterCamImage } from "./icons";
 import type { JamKind } from "./routes/tomtom";
-import type { Camera, EventKind, TrafficEvent } from "./shared/types";
+import type { Camera, EventKind, TrafficEvent, Webcam } from "./shared/types";
 import { flowUrl, SPEED_LAYERS, speedLayers, type Bands, type SpeedColors } from "./speeds";
 import { cssVar, isDark } from "./theme";
+import { playsHere } from "./webcams";
 
-export type Pick = { type: "camera"; id: number } | { type: "event"; id: number };
+export type Pick = { type: "camera"; id: number } | { type: "event"; id: number } | { type: "webcam"; id: string };
 
 export interface RouteDrawing {
   line: LngLat[];
@@ -123,6 +124,7 @@ export class TrafficMap {
   onClick: (at: LngLat, pick: Pick | null) => void = () => {};
 
   private cameras: Features = none();
+  private webcams: Features = none();
   private events: Features = none();
   private route: RouteDrawing | null = null;
   private routeCams: number[] = [];
@@ -131,6 +133,7 @@ export class TrafficMap {
   private flowStamp = Date.now();
   private showFlow = true;
   private showCams = true;
+  private showWater = true;
   private showWork = false;
   private onFlowError: () => void = () => {};
   /** Tiles TomTom refused since the last reload; a few in a row mean the key or its allowance, not a blip. */
@@ -196,6 +199,11 @@ export class TrafficMap {
       const id = `ev-${kind}`;
       if (map.hasImage(id)) map.removeImage(id);
       map.addImage(id, markerImage(style), { pixelRatio: 2 });
+    }
+    for (const plays of [true, false]) {
+      const id = plays ? "wc-plays" : "wc-link";
+      if (map.hasImage(id)) map.removeImage(id);
+      map.addImage(id, waterCamImage(plays), { pixelRatio: 2 });
     }
 
     map.addSource("route", { type: "geojson", data: this.routeLine() });
@@ -270,6 +278,22 @@ export class TrafficMap {
       },
     });
 
+    // Each water cam's card names who runs it.
+    map.addSource("webcams", { type: "geojson", data: this.webcams });
+    map.addLayer({
+      id: "webcams",
+      type: "symbol",
+      source: "webcams",
+      layout: {
+        visibility: this.showWater ? "visible" : "none",
+        "icon-image": ["case", ["get", "plays"], "wc-plays", "wc-link"],
+        "icon-size": ["interpolate", ["linear"], ["zoom"], 5, 0.55, 8, 0.75, 11, 1],
+        "icon-allow-overlap": true,
+        "icon-ignore-placement": true,
+        "symbol-sort-key": ["case", ["get", "plays"], 1, 0],
+      },
+    });
+
     map.addSource("events", { type: "geojson", data: this.events, attribution: FL511_CREDIT });
     map.addLayer({
       id: "events",
@@ -316,6 +340,14 @@ export class TrafficMap {
     const f = this.cameras.features.find((x) => x.id === id);
     if (f) f.properties = { off: !live };
     if (this.map.getSource("cams")) this.map.setFeatureState({ source: "cams", id }, { off: !live });
+  }
+
+  setWebcams(cams: Webcam[]) {
+    this.webcams = {
+      type: "FeatureCollection",
+      features: cams.map((w) => ({ type: "Feature", properties: { id: w.id, plays: playsHere(w) }, geometry: { type: "Point", coordinates: [w.lon, w.lat] } })),
+    };
+    this.setData("webcams", this.webcams);
   }
 
   setEvents(events: TrafficEvent[]) {
@@ -410,19 +442,24 @@ export class TrafficMap {
     if (this.map.getLayer("cams")) this.map.setLayoutProperty("cams", "visibility", on ? "visible" : "none");
   }
 
+  showWaterCams(on: boolean) {
+    this.showWater = on;
+    if (this.map.getLayer("webcams")) this.map.setLayoutProperty("webcams", "visibility", on ? "visible" : "none");
+  }
+
   showConstruction(on: boolean) {
     this.showWork = on;
     if (this.map.getLayer("events")) this.map.setFilter("events", this.eventFilter());
   }
 
-  /** What a tap at a screen point hits: an event before a camera, the nearest of either. */
+  /** What a tap at a screen point hits: an event before a camera or water cam, the nearest of each. */
   pickAt(pt: [number, number]): Pick | null {
     const r = 13;
     const box: [PointLike, PointLike] = [
       [pt[0] - r, pt[1] - r],
       [pt[0] + r, pt[1] + r],
     ];
-    const layers = ["events", "cams-route", "cams"].filter((id) => this.map.getLayer(id));
+    const layers = ["events", "webcams", "cams-route", "cams"].filter((id) => this.map.getLayer(id));
     if (!layers.length) return null;
     const hits = this.map.queryRenderedFeatures(box, { layers });
     const nearest = (fs: MapGeoJSONFeature[]) => {
@@ -442,7 +479,8 @@ export class TrafficMap {
     const ev = nearest(hits.filter((f) => f.layer.id === "events"));
     if (ev) return { type: "event", id: Number(ev.id) };
     const cam = nearest(hits.filter((f) => f.layer.id !== "events"));
-    return cam ? { type: "camera", id: Number(cam.id) } : null;
+    if (!cam) return null;
+    return cam.layer.id === "webcams" ? { type: "webcam", id: String(cam.properties.id) } : { type: "camera", id: Number(cam.id) };
   }
 
   fitFlorida() {

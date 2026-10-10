@@ -3,9 +3,12 @@
 
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import type { CameraFile } from "../src/shared/types";
+import type { CameraFile, WebcamFile } from "../src/shared/types";
+import { WEBCAM_KINDS } from "../src/webcams";
 
-const cams: CameraFile = JSON.parse(readFileSync(new URL("../public/data/cameras.json", import.meta.url), "utf8"));
+const read = <T>(name: string): T => JSON.parse(readFileSync(new URL(`../public/data/${name}`, import.meta.url), "utf8"));
+const cams = read<CameraFile>("cameras.json");
+const water = read<WebcamFile>("webcams.json");
 
 // Florida, with room for cameras at the state lines.
 const BOX = { west: -87.7, south: 24.3, east: -79.8, north: 31.1 };
@@ -67,5 +70,56 @@ describe("cameras.json", () => {
     for (const id of cams.noFeed) expect(images.has(id), `image ${id}`).toBe(true);
     // About a fifth are dark on a typical day; most of them dark would mean FL511 changed its list.
     expect(cams.noFeed.length / images.size).toBeLessThan(0.5);
+  });
+});
+
+/** Where a water cam's pictures may come from: USGS's and NOAA's own servers, whose pictures are
+ *  public domain. Anyone else's go on its own page, not this one. */
+const PICTURE_HOSTS = ["usgs-nims-images.s3.amazonaws.com", "www.ndbc.noaa.gov"];
+
+describe("webcams.json", () => {
+  it("says when it was checked", () => {
+    expect(water.checked).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(Date.parse(water.checked)).toBeGreaterThan(Date.parse("2026-01-01"));
+  });
+
+  it("lists each cam once, under a slug of a name of its own", () => {
+    expect(water.cams.length).toBeGreaterThan(50);
+    const ids = water.cams.map((w) => w.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(new Set(water.cams.map((w) => w.name)).size).toBe(ids.length);
+    for (const id of ids) expect(id).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
+  });
+
+  it("puts every cam in Florida or off its coast", () => {
+    for (const w of water.cams) {
+      const inside = w.lon > BOX.west && w.lon < BOX.east && w.lat > BOX.south && w.lat < BOX.north;
+      expect(inside, `${w.id} at ${w.lon}, ${w.lat}`).toBe(true);
+    }
+  });
+
+  it("names a kind, an owner, and a page for each", () => {
+    for (const w of water.cams) {
+      expect(Object.keys(WEBCAM_KINDS), w.id).toContain(w.kind);
+      expect(w.by.trim(), w.id).not.toBe("");
+      expect(w.page, w.id).toMatch(/^https:\/\/\S+$/);
+      expect(new URL(w.page).protocol).toBe("https:");
+    }
+  });
+
+  it("plays only public-domain pictures and YouTube streams here", () => {
+    const views = water.cams.flatMap((w) => (w.views ?? []).map((v) => ({ id: w.id, ...v })));
+    expect(views.length).toBeGreaterThan(10);
+    for (const w of water.cams.filter((c) => c.views)) expect(w.views!.length, w.id).toBeGreaterThan(0);
+    for (const v of views) {
+      expect(v.label.trim(), v.id).not.toBe("");
+      expect(Number(Boolean(v.youtube)) + Number(Boolean(v.picture)), `${v.id}: one of youtube or picture`).toBe(1);
+      if (v.youtube) expect(v.youtube, v.id).toMatch(/^[\w-]{11}$/);
+      if (v.picture) {
+        const url = new URL(v.picture);
+        expect(url.protocol, v.id).toBe("https:");
+        expect(PICTURE_HOSTS, `${v.id}: ${url.host}`).toContain(url.host);
+      }
+    }
   });
 });

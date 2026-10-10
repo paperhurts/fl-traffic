@@ -1,6 +1,6 @@
-// Event markers, drawn once per color scheme. Each kind has its own shape as
-// well as its own color, so they stay apart for color-blind viewers and against
-// TomTom's green-to-red speeds; cards and the legend name them in words too.
+// Event and water cam markers, drawn once per color scheme. Each kind has its own
+// shape as well as its own color, so they stay apart for color-blind viewers and
+// against TomTom's green-to-red speeds; cards and the legend name them in words too.
 
 import type { EventKind } from "./shared/types";
 import { cssVar } from "./theme";
@@ -137,12 +137,55 @@ export function markerImage(kind: KindStyle, size = ICON_PX): ImageData {
   return ctx.getImageData(0, 0, px, px);
 }
 
-/** The same marker as a data URL, for the legend and cards. */
-export function markerUrl(kind: KindStyle, size = ICON_PX): string {
-  const img = markerImage(kind, size);
+/** A water cam's marker: a drop with a lens in it, filled when the cam plays on the page and
+ *  hollow when it opens its owner's page, as a camera with no live feed is a ring. No event is
+ *  drawn as a drop. */
+export function waterCamImage(plays: boolean, size = ICON_PX): ImageData {
+  const px = size * RATIO;
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = px;
+  const ctx = canvas.getContext("2d")!;
+  // A round bottom and a tip above it, joined along the tangents from the tip.
+  const r = px * 0.27;
+  const tip = r * 1.8;
+  const cx = px / 2;
+  const cy = (px - tip - r) / 2 + tip;
+  const a = Math.acos(r / tip);
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - tip);
+  ctx.arc(cx, cy, r, -Math.PI / 2 + a, (Math.PI * 3) / 2 - a);
+  ctx.closePath();
+  const ink = cssVar("--water-cam");
+  const halo = cssVar("--halo");
+  ctx.lineJoin = "round";
+  ctx.lineWidth = px * 0.1;
+  ctx.strokeStyle = halo;
+  ctx.stroke();
+  ctx.fillStyle = plays ? ink : halo;
+  ctx.fill();
+  if (!plays) {
+    ctx.lineWidth = px * 0.055;
+    ctx.strokeStyle = ink;
+    ctx.stroke();
+  }
+  ctx.fillStyle = plays ? cssVar("--glyph") : ink;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r * 0.42, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = plays ? ink : halo;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r * 0.17, 0, Math.PI * 2);
+  ctx.fill();
+  return ctx.getImageData(0, 0, px, px);
+}
+
+/** A marker as a data URL, for the legend and cards. */
+export function imageUrl(img: ImageData): string {
   const canvas = document.createElement("canvas");
   canvas.width = img.width;
   canvas.height = img.height;
   canvas.getContext("2d")!.putImageData(img, 0, 0);
   return canvas.toDataURL();
 }
+
+export const markerUrl = (kind: KindStyle, size = ICON_PX) => imageUrl(markerImage(kind, size));

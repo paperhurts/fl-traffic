@@ -12,7 +12,7 @@
   --road: #4a4433; --road-minor: #332f24;
   /* markers: outline, glyph on dark fills, glyph on the yellow construction fill */
   --halo: #18160f; --glyph: #fffaf0; --glyph-dark: #2a2410;
-  --cam: #8fb8f0; --route: #a794f0;
+  --cam: #8fb8f0; --route: #a794f0; --water-cam: #3aa6f0;
   --crash: #f0564a; --incident: #f2b33d; --closure: #d8306e; --slow: #f0843c; --work: #f2d45c;
   --disabled: #8fa4c8; --weather: #5fd8cc; --event: #9bd36a;
   /* speeds (src/speeds.ts): TomTom's relative0 colors at 80% over the dark land, where full strength
@@ -32,7 +32,7 @@
     --card: rgba(240, 241, 235, .97); --hi: #111; --accent: #0a8f86;
     --sea: #bccfd3; --green: #dbe2d0; --town: #e2e3da; --label: #343a2e; --label-halo: #f1f2ec;
     --halo: #ffffff; --glyph: #ffffff; --glyph-dark: #2a2410;
-    --cam: #2a5db0; --route: #6b50c8;
+    --cam: #2a5db0; --route: #6b50c8; --water-cam: #0b74c4;
     --crash: #d0281c; --incident: #b07400; --closure: #a3124a; --slow: #d2601a; --work: #e0b81c;
     --disabled: #4f6a96; --weather: #0a8f86; --event: #4d8a1f;
     --flow-free: #2eab30; --flow-slow: #f1bf40; --flow-heavy: #f18237; --flow-stopped: #e70704; --flow-closed: #c1272d;

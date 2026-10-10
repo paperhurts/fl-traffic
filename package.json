@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "cameras": "node scripts/cameras.ts",
+    "webcams": "node scripts/webcams.ts",
     "relay": "node scripts/dev-relay.ts"
   },
   "devDependencies": {

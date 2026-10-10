@@ -1,7 +1,7 @@
 // Loading the camera list and the relay's events and settings.
 
 import { RELAY, TOMTOM_KEY_OVERRIDE } from "./config";
-import type { Camera, CameraFile, EventsResponse, RelayConfig } from "./shared/types";
+import type { Camera, CameraFile, EventsResponse, RelayConfig, Webcam, WebcamFile } from "./shared/types";
 
 export function decodeCameras(file: CameraFile): Camera[] {
   const off = new Set(file.noFeed);
@@ -29,6 +29,18 @@ export async function loadCameras(): Promise<{ cameras: Camera[]; generated: str
   if (!res.ok) throw new Error(`cameras.json: HTTP ${res.status}`);
   const file = (await res.json()) as CameraFile;
   return { cameras: decodeCameras(file), generated: file.generated };
+}
+
+/** The beach and water cams; without them the rest of the page still works. */
+export async function loadWebcams(): Promise<Webcam[]> {
+  try {
+    const res = await fetch(new URL("./data/webcams.json", document.baseURI));
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return ((await res.json()) as WebcamFile).cams;
+  } catch (e) {
+    console.warn("webcams.json:", e);
+    return [];
+  }
 }
 
 export async function fetchEvents(signal?: AbortSignal): Promise<EventsResponse> {
