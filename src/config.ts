@@ -28,4 +28,6 @@ export const EVENTS_EVERY_MS = 60_000;
 export const STILLS_EVERY_MS = 60_000;
 /** How often to reload TomTom's speed tiles and the open route. */
 export const SPEEDS_EVERY_MS = 180_000;
+/** How often to ask IEM whether a newer radar mosaic is out (it makes one every five minutes). */
+export const RADAR_EVERY_MS = 150_000;
 export const ROUTE_EVERY_MS = 180_000;

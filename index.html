@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Florida traffic</title>
-<meta name="description" content="Live traffic on Florida's roads: FL511's crashes, closures, and slowdowns, its 4,961 traffic cameras, TomTom's speeds, and beach and water cams, around the drives you make.">
+<meta name="description" content="Live traffic on Florida's roads: FL511's crashes, closures, and slowdowns, its 4,961 traffic cameras, TomTom's speeds, weather radar, and beach and water cams, around the drives you make.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://fl-traffic.paperhurts.dev/">
 <meta property="og:title" content="Florida traffic">
@@ -42,6 +42,7 @@
 <div class="tools">
   <button id="bRoutes" type="button" aria-pressed="false">My routes</button>
   <button id="bSpeeds" type="button" aria-pressed="true" hidden>Speeds</button>
+  <button id="bRadar" type="button" aria-pressed="false">Radar</button>
   <button id="bCams" type="button" aria-pressed="true">Cameras</button>
   <button id="bWater" type="button" aria-pressed="true">Water cams</button>
   <input id="find" type="search" list="camList" placeholder="Find a camera" aria-label="Find a camera by name, road, or county, or a water cam by name or owner" enterkeyhint="search" autocomplete="off">
@@ -49,7 +50,7 @@
   <button id="bWork" type="button" aria-pressed="false">Construction</button>
   <button id="bAll" type="button">Whole state</button>
 </div>
-<div id="status">Crashes, closures, slowdowns, and cameras: <a href="https://fl511.com/" target="_blank" rel="noopener">FL511</a> (FDOT), checked every minute. Speeds and drive times: TomTom. Water cams: the counties, cities, and others each card names. Map: OpenFreeMap and OpenStreetMap. Check before you go; don't use it while driving.</div>
+<div id="status">Crashes, closures, slowdowns, and cameras: <a href="https://fl511.com/" target="_blank" rel="noopener">FL511</a> (FDOT), checked every minute. Speeds and drive times: TomTom. Radar: the National Weather Service, through the Iowa Environmental Mesonet. Water cams: the counties, cities, and others each card names. Map: OpenFreeMap and OpenStreetMap. Check before you go; don't use it while driving.</div>
 </div>
 </body>
 </html>

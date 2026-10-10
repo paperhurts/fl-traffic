@@ -20,6 +20,10 @@
   --flow-free: #2b8f2b; --flow-slow: #c79f37; --flow-heavy: #c76e30; --flow-stopped: #bf0b07; --flow-closed: #a12528;
   --flow-free-edge: #193c18; --flow-slow-edge: #a2562a; --flow-heavy-edge: #9b340e; --flow-stopped-edge: #730402; --flow-closed-edge: #474747;
   --flow-dash: #d9d9d9;
+  /* radar rain (src/radar.ts): one blue ramp from 20 to 60 dBZ, dark to light here, and light to
+     dark in light mode; each step more opaque, so light rain only tints the map */
+  --rain-20: rgba(24, 79, 149, .5); --rain-30: rgba(42, 120, 214, .58); --rain-40: rgba(85, 152, 231, .68);
+  --rain-50: rgba(158, 197, 244, .8); --rain-60: rgba(205, 226, 251, .9);
 
   --serif: "Spectral", Georgia, "Times New Roman", serif;
   --sans: "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
@@ -38,6 +42,8 @@
     --flow-free: #2eab30; --flow-slow: #f1bf40; --flow-heavy: #f18237; --flow-stopped: #e70704; --flow-closed: #c1272d;
     --flow-free-edge: #245723; --flow-slow-edge: #e87b3d; --flow-heavy-edge: #df4b15; --flow-stopped-edge: #a50704; --flow-closed-edge: #666666;
     --flow-dash: #f2f2f2;
+    --rain-20: rgba(134, 182, 239, .35); --rain-30: rgba(57, 135, 229, .5); --rain-40: rgba(28, 92, 171, .65);
+    --rain-50: rgba(16, 66, 129, .78); --rain-60: rgba(13, 54, 107, .88);
     color-scheme: light;
   }
 }

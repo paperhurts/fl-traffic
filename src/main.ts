@@ -1,6 +1,6 @@
 import "./style.css";
 import { Card, isNoFeedPicture } from "./cards";
-import { EVENTS_EVERY_MS, SPEEDS_EVERY_MS, STILLS_EVERY_MS } from "./config";
+import { EVENTS_EVERY_MS, RADAR_EVERY_MS, SPEEDS_EVERY_MS, STILLS_EVERY_MS } from "./config";
 import { fetchConfig, fetchEvents, hasFeed, loadCameras, loadWebcams } from "./data";
 import { cameraLabels, findPlace } from "./find";
 import { clock } from "./format";
@@ -8,6 +8,7 @@ import type { LngLat } from "./geo";
 import { imageUrl, KINDS, markerUrl, waterCamImage } from "./icons";
 import { TrafficMap } from "./mapview";
 import { nearbyCameras } from "./nearby";
+import { RADAR_VALID_URL, radarStamp } from "./radar";
 import { RoutePanel } from "./routes/panel";
 import { recall, remember } from "./routes/store";
 import type { EventKind, EventsResponse, TrafficEvent } from "./shared/types";
@@ -33,6 +34,8 @@ async function start() {
   let failed = false;
   /** The event whose card is open, to bring up to date with each refresh. */
   let shownEvent: number | null = null;
+  /** When the radar mosaic on the map was made (ISO), once one is. */
+  let radarTime: string | null = null;
 
   tm.setCameras(cams.cameras);
   tm.setWebcams(webcams);
@@ -149,6 +152,7 @@ async function start() {
       items.push(`<li><span class="ramp"></span>Speeds, free to stopped <span class="note">TomTom</span></li>`);
       items.push(`<li><span class="shut"></span>Closed <span class="note">TomTom</span></li>`);
     }
+    if (pressed("bRadar")) items.push(`<li><span class="rain"></span>Rain, light to heavy <span class="note">radar${radarTime ? ` at ${clock(radarTime)}` : ""}</span></li>`);
     items.push(`<li><span class="band"></span>Your route</li>`);
     $("legendList").innerHTML = items.join("");
   }
@@ -166,6 +170,28 @@ async function start() {
   $("bCams").addEventListener("click", () => {
     chip("bCams", !pressed("bCams"));
     tm.showCameras(pressed("bCams"));
+  });
+  // Radar: off until asked for, then IEM's newest mosaic, checked again every few minutes.
+  async function refreshRadar() {
+    try {
+      const res = await fetch(RADAR_VALID_URL, { cache: "no-cache" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const valid = ((await res.json()) as { meta: { valid: string } }).meta.valid;
+      if (valid === radarTime) return;
+      radarTime = valid;
+      tm.setRadar(radarStamp(valid));
+    } catch (e) {
+      // IEM's newest tiles still show, without a time to give them.
+      console.warn("radar:", e);
+      if (!radarTime) tm.setRadar(null);
+    }
+    renderLegend();
+  }
+  $("bRadar").addEventListener("click", () => {
+    chip("bRadar", !pressed("bRadar"));
+    tm.showRadar(pressed("bRadar"));
+    renderLegend();
+    if (pressed("bRadar")) void refreshRadar();
   });
   $("bWater").hidden = !webcams.length;
   $("bWater").addEventListener("click", () => {
@@ -256,11 +282,13 @@ async function start() {
   const live = () => document.visibilityState === "visible";
   setInterval(() => live() && loadEvents(), EVENTS_EVERY_MS);
   setInterval(() => live() && tm.refreshSpeeds(), SPEEDS_EVERY_MS);
+  setInterval(() => live() && pressed("bRadar") && refreshRadar(), RADAR_EVERY_MS);
   setInterval(() => live() && panel.refreshStills(), STILLS_EVERY_MS);
   document.addEventListener("visibilitychange", () => {
     if (live() && last && Date.now() - Date.parse(last.fetched) > EVENTS_EVERY_MS) {
       loadEvents();
       tm.refreshSpeeds();
+      if (pressed("bRadar")) void refreshRadar();
     }
   });
 
