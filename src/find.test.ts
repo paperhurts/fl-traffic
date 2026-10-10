@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { cameraLabels, findCamera } from "./find";
-import type { Camera } from "./shared/types";
+import { cameraLabels, findCamera, findPlace, findWebcam } from "./find";
+import type { Camera, Webcam } from "./shared/types";
 
 const cam = (id: number, location: string, road: string, county: string, more: Partial<Camera> = {}): Camera => ({
   id,
@@ -57,5 +57,42 @@ describe("findCamera", () => {
   it("finds nothing for nothing, or for words no camera has", () => {
     expect(findCamera("  ", cams, labels)).toBeNull();
     expect(findCamera("seven mile", cams, labels)).toBeNull();
+  });
+});
+
+const webcam = (id: string, name: string, by: string, kind: Webcam["kind"]): Webcam => ({ id, name, by, kind, lon: -82, lat: 27, page: "https://example.org/" });
+
+const webcams = [
+  webcam("siesta-beach", "Siesta Beach", "Visit Sarasota County", "beach"),
+  webcam("naples-pier", "Naples Pier", "City of Naples", "pier"),
+  webcam("gandy-boat-ramp", "Gandy Boat Ramp", "Hillsborough County", "bay"),
+];
+
+describe("findWebcam", () => {
+  it("takes an exact label, or every word typed from its label or owner", () => {
+    expect(findWebcam("Naples Pier (pier cam)", webcams)?.id).toBe("naples-pier");
+    expect(findWebcam("siesta", webcams)?.id).toBe("siesta-beach");
+    expect(findWebcam("city naples", webcams)?.id).toBe("naples-pier");
+    expect(findWebcam("pier cam", webcams)?.id).toBe("naples-pier");
+  });
+  it("takes only an exact label when asked to", () => {
+    expect(findWebcam("siesta", webcams, true)).toBeNull();
+    expect(findWebcam("Siesta Beach (beach cam)", webcams, true)?.id).toBe("siesta-beach");
+  });
+});
+
+describe("findPlace", () => {
+  const labels = cameraLabels(cams);
+  it("takes an exact label of either kind first", () => {
+    expect(findPlace("I-275 at Gandy Blvd (Hillsborough)", cams, labels, webcams)).toMatchObject({ type: "camera", camera: { id: 2 } });
+    expect(findPlace("Gandy Boat Ramp (bay cam)", cams, labels, webcams)).toMatchObject({ type: "webcam", webcam: { id: "gandy-boat-ramp" } });
+  });
+  it("prefers a water cam to a camera for words both have", () => {
+    expect(findPlace("gandy", cams, labels, webcams)).toMatchObject({ type: "webcam", webcam: { id: "gandy-boat-ramp" } });
+    expect(findPlace("gandy i-275", cams, labels, webcams)).toMatchObject({ type: "camera", camera: { id: 2 } });
+  });
+  it("finds nothing but exact labels as each letter is typed", () => {
+    expect(findPlace("gandy", cams, labels, webcams, true)).toBeNull();
+    expect(findPlace("  ", cams, labels, webcams)).toBeNull();
   });
 });

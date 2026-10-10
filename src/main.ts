@@ -1,17 +1,18 @@
 import "./style.css";
 import { Card, isNoFeedPicture } from "./cards";
 import { EVENTS_EVERY_MS, SPEEDS_EVERY_MS, STILLS_EVERY_MS } from "./config";
-import { fetchConfig, fetchEvents, hasFeed, loadCameras } from "./data";
-import { cameraLabels, findCamera } from "./find";
+import { fetchConfig, fetchEvents, hasFeed, loadCameras, loadWebcams } from "./data";
+import { cameraLabels, findPlace } from "./find";
 import { clock } from "./format";
 import type { LngLat } from "./geo";
-import { KINDS, markerUrl } from "./icons";
+import { imageUrl, KINDS, markerUrl, waterCamImage } from "./icons";
 import { TrafficMap } from "./mapview";
 import { nearbyCameras } from "./nearby";
 import { RoutePanel } from "./routes/panel";
 import { recall, remember } from "./routes/store";
 import type { EventKind, EventsResponse, TrafficEvent } from "./shared/types";
 import { onSchemeChange } from "./theme";
+import { webcamLabel } from "./webcams";
 
 const $ = (id: string) => document.getElementById(id)!;
 const lede = $("lede");
@@ -22,8 +23,9 @@ const LEDE_KINDS: EventKind[] = ["crash", "closure", "congestion"];
 async function start() {
   const saved = recall<{ center: LngLat; zoom: number }>("view");
   const view = saved && saved.center?.every(Number.isFinite) && Number.isFinite(saved.zoom) ? saved : null;
-  const [tm, cams, config] = await Promise.all([TrafficMap.create($("map"), view), loadCameras(), fetchConfig()]);
+  const [tm, cams, config, webcams] = await Promise.all([TrafficMap.create($("map"), view), loadCameras(), fetchConfig(), loadWebcams()]);
   const camById = new Map(cams.cameras.map((c) => [c.id, c]));
+  const webcamById = new Map(webcams.map((w) => [w.id, w]));
   const camByImage = new Map(cams.cameras.flatMap((c) => c.images.map((im) => [im, c] as const)));
   let events: TrafficEvent[] = [];
   let evById = new Map<number, TrafficEvent>();
@@ -33,6 +35,7 @@ async function start() {
   let shownEvent: number | null = null;
 
   tm.setCameras(cams.cameras);
+  tm.setWebcams(webcams);
 
   const card = new Card();
   const panel = new RoutePanel({
@@ -51,6 +54,15 @@ async function start() {
     card.camera(c);
     tm.select([c.lon, c.lat]);
     if (bringIntoView) tm.show([c.lon, c.lat]);
+  }
+
+  function openWebcam(id: string, bringIntoView = false) {
+    const w = webcamById.get(id);
+    if (!w) return;
+    shownEvent = null;
+    card.webcam(w);
+    tm.select([w.lon, w.lat]);
+    if (bringIntoView) tm.show([w.lon, w.lat]);
   }
 
   function openEvent(id: number, bringIntoView = false) {
@@ -90,6 +102,7 @@ async function start() {
     if (panel.picking) panel.picked(at);
     else if (!pick) card.close();
     else if (pick.type === "camera") openCamera(pick.id);
+    else if (pick.type === "webcam") openWebcam(pick.id);
     else openEvent(pick.id);
   };
 
@@ -128,6 +141,10 @@ async function start() {
     const shown: EventKind[] = ["crash", "incident", "closure", "congestion", "disabled", "construction", "weather", "event"];
     const items = shown.map((k) => `<li><img src="${markerUrl(KINDS[k])}" alt="">${KINDS[k].label}</li>`);
     items.push(`<li><span class="dot"></span>Camera</li>`, `<li><span class="dot off"></span>Camera, no live feed now</li>`);
+    if (webcams.length) {
+      items.push(`<li><img src="${imageUrl(waterCamImage(true))}" alt="">Water cam, plays here</li>`);
+      items.push(`<li><img src="${imageUrl(waterCamImage(false))}" alt="">Water cam, on its own page</li>`);
+    }
     if (tm.hasFlow) {
       items.push(`<li><span class="ramp"></span>Speeds, free to stopped <span class="note">TomTom</span></li>`);
       items.push(`<li><span class="shut"></span>Closed <span class="note">TomTom</span></li>`);
@@ -150,16 +167,22 @@ async function start() {
     chip("bCams", !pressed("bCams"));
     tm.showCameras(pressed("bCams"));
   });
+  $("bWater").hidden = !webcams.length;
+  $("bWater").addEventListener("click", () => {
+    chip("bWater", !pressed("bWater"));
+    tm.showWaterCams(pressed("bWater"));
+  });
   $("bWork").addEventListener("click", () => {
     chip("bWork", !pressed("bWork"));
     tm.showConstruction(pressed("bWork"));
   });
   $("bAll").addEventListener("click", () => tm.fitFlorida());
 
-  // Finding a camera: the suggestions are every camera's label; anything else typed is matched word by word.
+  // Finding a camera: the suggestions are every camera's and water cam's label; anything else typed is
+  // matched word by word.
   const labels = cameraLabels(cams.cameras);
   const list = $("camList");
-  for (const label of [...labels.values()].sort((a, b) => a.localeCompare(b))) {
+  for (const label of [...labels.values(), ...webcams.map(webcamLabel)].sort((a, b) => a.localeCompare(b))) {
     const o = document.createElement("option");
     o.value = label;
     list.appendChild(o);
@@ -169,17 +192,24 @@ async function start() {
   let found = "";
   const go = (exactOnly: boolean) => {
     const q = find.value.trim();
-    const c = findCamera(q, cams.cameras, labels);
-    if (!c || (exactOnly && labels.get(c.id) !== q)) {
+    const hit = findPlace(q, cams.cameras, labels, webcams, exactOnly);
+    if (!hit) {
       if (!exactOnly && q) {
-        find.setCustomValidity("No camera's name, road, or county has all of those words.");
+        find.setCustomValidity("No camera's name, road, county, or owner has all of those words.");
         find.reportValidity();
       }
       return;
     }
     found = q;
-    openCamera(c.id);
-    tm.show([c.lon, c.lat], 14);
+    if (hit.type === "camera") {
+      openCamera(hit.camera.id);
+      tm.show([hit.camera.lon, hit.camera.lat], 14);
+    } else {
+      // A water cam found while they're hidden shows them again, so its marker is there.
+      if (!pressed("bWater")) $("bWater").click();
+      openWebcam(hit.webcam.id);
+      tm.show([hit.webcam.lon, hit.webcam.lat], 12);
+    }
     find.blur();
   };
   // Picking a suggestion fills in its whole label; Enter takes whatever was typed.
@@ -237,7 +267,7 @@ async function start() {
   await loadEvents();
   if (panel.hasRoutes) panel.resume();
   // For poking at the page from the console on the dev server.
-  if (import.meta.env.DEV) Object.assign(window, { traffic: { tm, panel, card, events: () => events, cameras: cams.cameras, labels } });
+  if (import.meta.env.DEV) Object.assign(window, { traffic: { tm, panel, card, events: () => events, cameras: cams.cameras, labels, webcams } });
 }
 
 start().catch((e) => {

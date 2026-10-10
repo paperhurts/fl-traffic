@@ -1,10 +1,11 @@
-// The card over the map for a tapped camera or event. FL511's text is escaped
-// everywhere it's shown.
+// The card over the map for a tapped camera, water cam, or event. FL511's text
+// is escaped everywhere it's shown, and so is the water cams' list.
 
 import { cameraImage, cameraPage, FL511_LIST, STILLS_EVERY_MS } from "./config";
 import { ago, cameraName, clock, DIRECTION_WORDS, withoutUpdated } from "./format";
 import { KINDS, markerUrl } from "./icons";
-import type { Camera, TrafficEvent } from "./shared/types";
+import type { Camera, TrafficEvent, Webcam, WebcamView } from "./shared/types";
+import { pictureUrl, WEBCAM_KINDS, youtubeEmbed } from "./webcams";
 
 export const esc = (s: string) =>
   s.replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]!);
@@ -39,6 +40,8 @@ export class Card {
   private el = document.getElementById("card")!;
   private body = document.getElementById("cardBody")!;
   private timer = 0;
+  /** The open water cam's name and views, for its view buttons. */
+  private views: { name: string; list: WebcamView[] } | null = null;
 
   constructor() {
     document.getElementById("cardX")!.addEventListener("click", () => this.close());
@@ -48,6 +51,8 @@ export class Card {
     this.body.addEventListener("click", (e) => {
       const b = (e.target as HTMLElement).closest<HTMLElement>("[data-cam]");
       if (b) this.onCamera(Number(b.dataset.cam));
+      const v = (e.target as HTMLElement).closest<HTMLElement>("[data-view]");
+      if (v) this.play(Number(v.dataset.view));
     });
   }
 
@@ -59,11 +64,15 @@ export class Card {
     if (!this.isOpen) return;
     this.el.classList.remove("on");
     clearInterval(this.timer);
+    // A water cam's player would keep streaming out of sight.
+    this.body.innerHTML = "";
+    this.views = null;
     this.onClose();
   }
 
   private open(html: string) {
     this.body.innerHTML = html;
+    this.views = null;
     this.el.classList.add("on");
     this.el.scrollTop = 0;
     clearInterval(this.timer);
@@ -82,6 +91,42 @@ export class Card {
       <div class="stills">${c.images.map((id) => stillTag(id, `Latest still from the camera at ${name}`, "still", c.noFeed.includes(id))).join("")}</div>
       <p class="when">FL511's latest still, reloaded every minute.</p>
       <p class="links"><a href="${cameraPage(c.id)}" target="_blank" rel="noopener">Watch it live on FL511 ↗</a></p>`);
+  }
+
+  /** A water cam: its first view playing, buttons for any others, and its owner's page. */
+  webcam(w: Webcam) {
+    const list = w.views ?? [];
+    const buttons =
+      list.length > 1
+        ? `<div class="views" role="group" aria-label="Views">${list.map((v, i) => `<button type="button" data-view="${i}" aria-pressed="false">${esc(v.label)}</button>`).join("")}</div>`
+        : "";
+    this.open(`
+      <h2>${esc(w.name)}</h2>
+      <div class="kind">${WEBCAM_KINDS[w.kind]} · ${esc(w.by)}</div>
+      ${buttons}
+      ${list.length ? `<div class="player"></div>` : ""}
+      ${w.note ? `<p class="when">${esc(w.note)}</p>` : ""}
+      <p class="links"><a href="${esc(w.page)}" target="_blank" rel="noopener">${list.length ? "More on its own page" : "See it on its own page"} ↗</a></p>`);
+    if (!list.length) return;
+    this.views = { name: w.name, list };
+    this.play(0);
+  }
+
+  private play(i: number) {
+    const v = this.views?.list[i];
+    const box = this.body.querySelector<HTMLElement>(".player");
+    if (!v || !box) return;
+    const what = `${this.views!.name}: ${v.label}`;
+    box.className = "player";
+    if (v.youtube) {
+      box.innerHTML = `<iframe src="${youtubeEmbed(v.youtube)}" title="${esc(what)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
+    } else if (v.picture) {
+      box.innerHTML = `<img src="${esc(pictureUrl(v.picture))}" alt="${esc(`Latest picture from ${what}`)}" decoding="async">`;
+      // A buoy's six pictures come as one long strip: scroll it rather than shrink it to a sliver.
+      const img = box.querySelector("img")!;
+      img.addEventListener("load", () => box.classList.toggle("strip", img.naturalWidth > img.naturalHeight * 3), { once: true });
+    }
+    for (const b of this.body.querySelectorAll<HTMLElement>("[data-view]")) b.setAttribute("aria-pressed", String(b.dataset.view === String(i)));
   }
 
   event(e: TrafficEvent, nearby: Camera[]) {
