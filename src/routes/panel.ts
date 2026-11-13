@@ -12,7 +12,7 @@ import { KINDS, markerUrl } from "../icons";
 import type { TrafficMap } from "../mapview";
 import type { Camera, EventKind, TrafficEvent } from "../shared/types";
 import { byRoad, camerasAlong, eventsAlong, onCrossingRoad, type CameraAlong, type EventAlong } from "./match";
-import { alreadySaved, autoName, sharedRoute, shareLink, short, type SharedRoute } from "./share";
+import { alreadySaved, autoName, routesInText, sharedRoute, shareLink, short, type SharedRoute } from "./share";
 import { loadRoutes, newId, recall, remember, saveRoutes, type Place, type SavedRoute } from "./store";
 import { jamKind, nameOf, route as fetchRoute, search, worthShowing, type Jam, type JamKind, type RouteResult } from "./tomtom";
 import { atMile, compareUsual, countWords, milepost, usuallyFastest, wayNames } from "./words";
@@ -31,7 +31,8 @@ type View =
   | { name: "edit"; id: string | null }
   | { name: "detail"; id: string; back: boolean }
   | { name: "share"; picked: Set<string>; copied: string | null }
-  | { name: "offer"; routes: SharedRoute[] };
+  | { name: "offer"; routes: SharedRoute[] }
+  | { name: "paste"; error: string | null };
 
 /** A way to make a drive, with what to call it. */
 interface Way {
@@ -64,6 +65,9 @@ const JAM_WORDS: Record<JamKind, string> = { closed: "Closed", heavy: "Stop and 
 
 /** Events worth listing even on the other side of the road. */
 const BOTH_WAYS = new Set<EventKind>(["crash", "closure", "incident", "weather"]);
+
+/** Running as an app from a home screen, where there's no address bar to bookmark. */
+const installed = () => matchMedia("(display-mode: standalone)").matches || (navigator as { standalone?: boolean }).standalone === true;
 
 const flip = (r: SavedRoute): SavedRoute => ({ ...r, from: r.to, to: r.from });
 
@@ -118,6 +122,7 @@ export class RoutePanel {
       const f = e.target as HTMLFormElement;
       if (f.dataset.search) this.search(f.dataset.search as "from" | "to");
       else if (f.id === "routeForm") this.save();
+      else if (f.id === "pasteForm") this.paste();
     });
     this.body.addEventListener("change", (e) => {
       const t = e.target as HTMLInputElement;
@@ -342,6 +347,8 @@ export class RoutePanel {
           this.go({ name: "list" });
         }
         return;
+      case "paste":
+        return this.go({ name: "paste", error: null });
       case "decline":
         this.onOfferDeclined();
         return this.go({ name: "list" });
@@ -472,6 +479,7 @@ export class RoutePanel {
     let html: string;
     if (v.name === "offer") html = this.offerView(v.routes);
     else if (v.name === "share") html = this.shareView(v.picked, v.copied);
+    else if (v.name === "paste") html = this.pasteView(v.error);
     else if (!this.deps.key) html = this.noKey();
     else if (v.name === "list") html = this.listView();
     else if (v.name === "edit") html = this.editView(v.id);
@@ -496,6 +504,14 @@ export class RoutePanel {
     const jams = o.result.jams.filter(worthShowing).map((j) => ({ line: o.result.line.slice(j.from, j.to + 1), kind: jamKind(j) }));
     const others = (this.ways(this.routeKey(v.id, v.back))?.list ?? []).filter((w) => w.way !== o.result).map((w) => w.way.line);
     this.deps.map.setRoute({ line: o.result.line, jams, others }, o.cams.map((a) => a.item.id));
+  }
+
+  /** Offers the routes in a pasted link. */
+  private paste() {
+    const text = this.body.querySelector<HTMLTextAreaElement>("#rLink")?.value ?? "";
+    const routes = routesInText(text);
+    if (routes) this.offer(routes);
+    else this.go({ name: "paste", error: text.trim() ? "That doesn't have a route link in it. Copy the whole link from the message, or the whole message." : null });
   }
 
   /** Sends the picked routes' link: the phone's share sheet, or the clipboard. */
@@ -572,7 +588,8 @@ export class RoutePanel {
       }
       <div class="row"><button type="button" class="primary" data-act="new">Add a route</button>${
         items ? `<button type="button" class="primary quiet" data-act="share">Send to a phone</button>` : ""
-      }</div>`;
+      }</div>
+      <p><button type="button" class="link" data-act="paste">Paste a route link</button></p>`;
   }
 
   private placeField(which: "from" | "to") {
@@ -691,6 +708,17 @@ export class RoutePanel {
       <p class="hint">The link holds each route's name and its two ends, to about a block. A street address goes as its town, as shown above.</p>`;
   }
 
+  /** For a link that can't open here: a home screen app's own storage never sees a link opened in the browser. */
+  private pasteView(error: string | null) {
+    return `${this.head("Paste a route link", "list")}
+      <p>Someone sent you routes? Press and hold their link in the message, copy it, and paste it here. Pasting the whole message works too.</p>
+      <form id="pasteForm" class="paste">
+        <textarea id="rLink" rows="3" aria-label="The route link" placeholder="https://fl-traffic.paperhurts.dev/#routes=…" autocapitalize="off" autocorrect="off" spellcheck="false"></textarea>
+        <button type="submit" class="primary">Add the routes</button>
+      </form>
+      ${error ? `<p class="err">${esc(error)}</p>` : ""}`;
+  }
+
   /** Routes a link offers, saved only when the viewer says so. */
   private offerView(routes: SharedRoute[]) {
     const fresh = routes.filter((o) => !this.routes.some((r) => alreadySaved(r, o)));
@@ -703,7 +731,7 @@ export class RoutePanel {
       <p>Add ${these} to your routes? They're saved in this browser, like routes you make here, and each one shows its time in today's traffic and the other ways to go.</p>
       <ul class="picks">${items}</ul>
       <div class="row"><button type="button" class="primary" data-act="accept">${add}</button><button type="button" class="link" data-act="decline">Not now</button></div>
-      <p class="hint">Bookmark the page once they're added: opening the bookmark shows them, and puts them back if the browser ever clears what it saved.</p>`;
+      ${installed() ? "" : `<p class="hint">Bookmark the page once they're added: opening the bookmark shows them, and puts them back if the browser ever clears what it saved.</p>`}`;
   }
 
   private eventItem(a: Alert) {
