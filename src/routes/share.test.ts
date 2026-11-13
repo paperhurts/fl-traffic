@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { alreadySaved, routesInLink, shareLabel, shareLink, sharedRoute } from "./share";
+import { alreadySaved, routesInLink, routesInText, shareLabel, shareLink, sharedRoute } from "./share";
 import type { SavedRoute } from "./store";
 
 const PAGE = "https://fl-traffic.paperhurts.dev/";
@@ -72,5 +72,17 @@ describe("alreadySaved", () => {
     expect(alreadySaved(zoo, offered)).toBe(true);
     expect(alreadySaved({ ...zoo, id: "y", ...offered }, offered)).toBe(true);
     expect(alreadySaved({ ...zoo, name: "Somewhere else" }, offered)).toBe(false);
+  });
+});
+
+describe("routesInText", () => {
+  it("finds the link in a pasted link or a whole pasted message", () => {
+    const link = shareLink([zoo], PAGE);
+    expect(routesInText(link)).toEqual([sharedRoute(zoo)]);
+    expect(routesInText(`To the zoo, on the Florida traffic map ${link}\n`)).toEqual([sharedRoute(zoo)]);
+  });
+  it("finds nothing in other text", () => {
+    expect(routesInText("https://fl-traffic.paperhurts.dev/")).toBe(null);
+    expect(routesInText("")).toBe(null);
   });
 });

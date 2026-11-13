@@ -94,6 +94,14 @@ export function routesInLink(hash: string): SharedRoute[] | null {
   return routes.length ? routes : null;
 }
 
+/** The routes in a pasted link, or in a whole pasted message with the link somewhere in it. An app on
+ *  an iPhone's home screen keeps its own storage, and a texted link opens in the browser instead, so
+ *  that's how the link gets in there. */
+export function routesInText(text: string): SharedRoute[] | null {
+  const m = text.match(/[#&]routes=([A-Za-z0-9_-]+)/);
+  return m ? routesInLink(`#routes=${m[1]}`) : null;
+}
+
 /** Whether a saved route is already the one a link offers: the same name and ends. */
 export function alreadySaved(saved: SavedRoute, offered: SharedRoute): boolean {
   const s = sharedRoute(saved);
